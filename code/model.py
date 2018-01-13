@@ -53,7 +53,7 @@ class Proofreading_Model(object):
             pre_input = tf.nn.embedding_lookup(embedding, self.pre_input)  # 将原本单词ID转为单词向量。
             if is_training:
                 pre_input = tf.nn.dropout(pre_input, KEEP_PROB)
-            self.pre_initial_state = pre_lstm_cell.zero_state(batch_size, tf.float32)  # 初始化最初的状态。
+            self.pre_initial_state = pre_lstm_cell.zero_state(self.batch_size, tf.float32)  # 初始化最初的状态。
             pre_outputs, pre_states = tf.nn.dynamic_rnn(pre_lstm_cell, pre_input, initial_state=self.pre_initial_state,
                                                             dtype=tf.float32)
             #tmp_output = pre_outputs[:, -1, :]    #上一时刻的输出作下一时刻预测的输入
@@ -72,7 +72,7 @@ class Proofreading_Model(object):
             fol_input = tf.nn.embedding_lookup(embedding, self.fol_input)  # 将原本单词ID转为单词向量。
             if is_training:
                 fol_input = tf.nn.dropout(fol_input, KEEP_PROB)
-            self.fol_initial_state = fol_lstm_cell.zero_state(batch_size, tf.float32)  # 初始化最初的状态。
+            self.fol_initial_state = fol_lstm_cell.zero_state(self.batch_size, tf.float32)  # 初始化最初的状态。
             fol_outputs, fol_states = tf.nn.dynamic_rnn(fol_lstm_cell, fol_input, initial_state=self.fol_initial_state,
                                                         dtype=tf.float32)
             #tmp_output = fol_outputs[:, -1, :]  # 上一时刻的输出作下一时刻预测的输入
