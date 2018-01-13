@@ -9,9 +9,9 @@ import train
 VOCAB_SIZE = 100000 #词典规模
 MAX_TEXT_LENGTH = 50 #最长文本长度
 
-LEARNING_RATE = 0.1 #学习率
-LEARNING_RATE_DECAY_FACTOR =  0.5 #控制学习率下降的参数
-KEEP_PROB = 0.95 #节点不Dropout的概率
+LEARNING_RATE = 0.01 #学习率
+LEARNING_RATE_DECAY_FACTOR =  0.9999 #控制学习率下降的参数
+KEEP_PROB = 0.65 #节点不Dropout的概率
 # MAX_GRAD_NORM = 5 #用于控制梯度膨胀的参数
 
 HIDDEN_SIZE = 100 #词向量维度
@@ -116,7 +116,7 @@ class Proofreading_Model(object):
         # optimizer = tf.train.GradientDescentOptimizer(LEARNING_RATE)
         # self.train_op = optimizer.apply_gradients(zip(grads, trainable_variables))
 
-        self.train_op = tf.train.AdamOptimizer(learning_rate=self.learning_rate_decay_op).minimize(self.cost)
+        self.train_op = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
 
 
 # 使用给定的模型model在数据data上运行train_op并返回在全部数据上的cost值
@@ -159,8 +159,8 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         y = dataY[cnt:cnt + batch_size]  #  取结果
         # print(y)
         #lstm迭代计算
-        cost, pre_state, fol_state, outputs, _ = session.run([model.cost, model.pre_final_state, model.fol_final_state,
-                                                        model.logits, train_op],
+        cost, pre_state, fol_state, outputs, _, __ = session.run([model.cost, model.pre_final_state, model.fol_final_state,
+                                                        model.logits, train_op, learning_rate_decay_op],
                                                        feed_dict={model.pre_input: x1, model.fol_input: x2,
                                                                   model.targets: y,
                                                                   model.pre_initial_state: pre_state,
