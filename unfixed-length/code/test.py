@@ -8,10 +8,10 @@ from model import *
 
 TEST_BATCH_SIZE = 20 #测试数据batch的大小
 #TEST_NUM_STEP = 1 #测试数据截断长度
-GRAM = 3 #LSTM的时间维度
+# GRAM = 3 #LSTM的时间维度
 
-DATA_SIZE = 18876
-TRAIN_DATA_SIZE = int(DATA_SIZE * 0.7)
+DATA_SIZE = 100
+TRAIN_DATA_SIZE = int(DATA_SIZE * 0.0)
 TEST_DATA_SIZE = int(DATA_SIZE-TRAIN_DATA_SIZE)
 TEST_EPOCH_SIZE=math.ceil(TEST_DATA_SIZE / TEST_BATCH_SIZE)
 
@@ -45,7 +45,7 @@ def main():
 
     initializer = tf.random_uniform_initializer(-0.05, 0.05)
     with tf.variable_scope("Proofreading_model", reuse=None, initializer=initializer):
-        eval_model = Proofreading_Model(False, TEST_BATCH_SIZE, GRAM)
+        eval_model = Proofreading_Model(False, TEST_BATCH_SIZE)
 
     saver = tf.train.Saver()
     with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as session:
@@ -53,7 +53,7 @@ def main():
         print("loading model...")
         saver.restore(session, "../ckpt/model.ckpt")
         # 测试模型。
-        file = open('../test_results.txt', 'w')
+        file = open('../results/test_results.txt', 'w')
         print("In testing:")
         run_epoch(session, eval_model, test_data, tf.no_op(), False,
                   TEST_BATCH_SIZE, TEST_EPOCH_SIZE, char_set, file,False,False)

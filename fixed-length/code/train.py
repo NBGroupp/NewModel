@@ -56,18 +56,18 @@ def main():
         if(os.path.exists("../ckpt/checkpoint")):
             # 读取模型
             print("loading model...")
-            saver.restore(session, "../ckpt/model.ckpt")
-            file = open('../results.txt', 'a')
+            saver.restore(session, "./ckpt/model.ckpt")
+            file = open('../results/results.txt', 'a')
         else:
             print("new training...")
             tf.global_variables_initializer().run()
-            file = open('../results.txt', 'w')
+            file = open('../results/results.txt', 'w')
 
         # 记录cost
         # 要使用tensorboard，首先定义summary节点，不定义会出错
         tf.summary.scalar('cost', train_model.cost)
         merged_summary_op = tf.summary.merge_all()
-        summary_writer = tf.summary.FileWriter('../tmp/test_logs', session.graph)
+        summary_writer = tf.summary.FileWriter('../logs/test_logs', session.graph)
 
         print("In training:")
         for i in range(NUM_EPOCH):
