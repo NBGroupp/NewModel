@@ -1,22 +1,24 @@
+# -- coding: utf-8 --
+#=====================================================================
 import tensorflow as tf
 import os
 import numpy as np
 import train
 
 #参数
-VOCAB_SIZE = 100000#词典规模
-MAX_TEXT_LENGTH = 50#最长文本长度
+VOCAB_SIZE = 100000 #词典规模
+MAX_TEXT_LENGTH = 50 #最长文本长度
 
-LEARNING_RATE = 0.1#学习率
+LEARNING_RATE = 0.1 #学习率
 LEARNING_RATE_DECAY_FACTOR =  0.5 #控制学习率下降的参数
-KEEP_PROB = 0.8#节点不Dropout的概率
-MAX_GRAD_NORM = 5 #用于控制梯度膨胀的参数
+KEEP_PROB = 0.95 #节点不Dropout的概率
+# MAX_GRAD_NORM = 5 #用于控制梯度膨胀的参数
 
-HIDDEN_SIZE = 100#词向量维度
-PRE_CONTEXT_HIDDEN_SIZE = HIDDEN_SIZE#上文lstm的隐藏层数目
-PRE_CONTEXT_NUM_LAYERS = 1#上文lstm的深度
-FOL_CONTEXT_HIDDEN_SIZE = HIDDEN_SIZE#下文lstm的隐藏层数目
-FOL_CONTEXT_NUM_LAYERS= 1#下文lstm的深度
+HIDDEN_SIZE = 100 #词向量维度
+PRE_CONTEXT_HIDDEN_SIZE = HIDDEN_SIZE #上文lstm的隐藏层数目
+PRE_CONTEXT_NUM_LAYERS = 1 #上文lstm的深度
+FOL_CONTEXT_HIDDEN_SIZE = HIDDEN_SIZE #下文lstm的隐藏层数目
+FOL_CONTEXT_NUM_LAYERS= 1 #下文lstm的深度
 
 class Proofreading_Model(object):
     def __init__(self, is_training, batch_size, num_steps):
@@ -28,25 +30,25 @@ class Proofreading_Model(object):
         #定义网络参数
         self.learning_rate = tf.Variable(float(LEARNING_RATE), trainable=False, dtype=tf.float32)
         self.learning_rate_decay_op = self.learning_rate.assign(self.learning_rate * LEARNING_RATE_DECAY_FACTOR)
-        self.global_step = tf.Variable(0, trainable=False)
+        # self.global_step = tf.Variable(0, trainable=False)
         self.batch_size = batch_size
         self.num_steps = num_steps
 
         # 定义输入层,其维度是batch_size * num_steps
-        self.pre_input = tf.placeholder(tf.int32, [batch_size, num_steps])
-        self.fol_input = tf.placeholder(tf.int32, [batch_size, num_steps])
+        self.pre_input = tf.placeholder(tf.int32, [self.batch_size, num_steps])
+        self.fol_input = tf.placeholder(tf.int32, [self.batch_size, num_steps])
         # 定义预期输出，它的维度和上面维度相同
-        self.targets = tf.placeholder(tf.int32, [batch_size,])
+        self.targets = tf.placeholder(tf.int32, [self.batch_size,])
 
         embedding = tf.get_variable("embedding", [VOCAB_SIZE, HIDDEN_SIZE])  # embedding矩阵
 
         # pre_context_model
         with tf.variable_scope('Pre') as scope:
-            pre_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=PRE_CONTEXT_HIDDEN_SIZE, forget_bias=0.0,
+            pre_cell = tf.contrib.rnn.BasicLSTMCell(num_units=PRE_CONTEXT_HIDDEN_SIZE, forget_bias=0.0,
                                                 state_is_tuple=True)
             if is_training:
-                pre_cell = tf.nn.rnn_cell.DropoutWrapper(pre_cell, output_keep_prob=KEEP_PROB)
-            pre_lstm_cell = tf.nn.rnn_cell.MultiRNNCell([pre_cell] * PRE_CONTEXT_NUM_LAYERS, state_is_tuple=True)
+                pre_cell = tf.contrib.rnn.DropoutWrapper(pre_cell, output_keep_prob=KEEP_PROB)
+            pre_lstm_cell = tf.contrib.rnn.MultiRNNCell([pre_cell] * PRE_CONTEXT_NUM_LAYERS, state_is_tuple=True)
 
             pre_input = tf.nn.embedding_lookup(embedding, self.pre_input)  # 将原本单词ID转为单词向量。
             if is_training:
@@ -61,11 +63,11 @@ class Proofreading_Model(object):
 
         # fol_context_model
         with tf.variable_scope('Fol') as scope:
-            fol_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=FOL_CONTEXT_HIDDEN_SIZE, forget_bias=0.0,
+            fol_cell = tf.contrib.rnn.BasicLSTMCell(num_units=FOL_CONTEXT_HIDDEN_SIZE, forget_bias=0.0,
                                                     state_is_tuple=True)
             if is_training:
-                fol_cell = tf.nn.rnn_cell.DropoutWrapper(fol_cell, output_keep_prob=KEEP_PROB)
-            fol_lstm_cell = tf.nn.rnn_cell.MultiRNNCell([fol_cell] * FOL_CONTEXT_NUM_LAYERS, state_is_tuple=True)
+                fol_cell = tf.contrib.rnn.DropoutWrapper(fol_cell, output_keep_prob=KEEP_PROB)
+            fol_lstm_cell = tf.contrib.rnn.MultiRNNCell([fol_cell] * FOL_CONTEXT_NUM_LAYERS, state_is_tuple=True)
 
             fol_input = tf.nn.embedding_lookup(embedding, self.fol_input)  # 将原本单词ID转为单词向量。
             if is_training:
@@ -114,7 +116,7 @@ class Proofreading_Model(object):
         # optimizer = tf.train.GradientDescentOptimizer(LEARNING_RATE)
         # self.train_op = optimizer.apply_gradients(zip(grads, trainable_variables))
 
-        self.train_op = tf.train.AdamOptimizer(learning_rate=0.1).minimize(self.cost)
+        self.train_op = tf.train.AdamOptimizer(learning_rate=self.learning_rate_decay_op).minimize(self.cost)
 
 
 # 使用给定的模型model在数据data上运行train_op并返回在全部数据上的cost值
@@ -170,7 +172,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         correct_num = correct_num + sum(classes == target_index)
         # 写入到文件以及输出到屏幕
         #if is_training and (step+1) % 100 == 0:
-        if (step+1) % 100 == 0:
+        if (step+1) % 10 == 0:
             print("After %d steps, cost : %.3f" % (step, total_costs / (step + 1)))
             file.write("After %d steps, cost : %.3f" % (step, total_costs / (step + 1)) + '\n')
             print("outputs: " + ' '.join([char_set[t] for t in classes]))
@@ -194,4 +196,5 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
        print("acc: %.5f" % acc)
        file.write("acc: %.5f" % acc)
        #file.write("acc:" + str(acc))
+
 
