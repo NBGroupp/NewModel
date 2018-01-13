@@ -9,9 +9,9 @@ import train
 VOCAB_SIZE = 100000 #词典规模
 MAX_TEXT_LENGTH = 50 #最长文本长度
 
-LEARNING_RATE = 0.1 #学习率
+LEARNING_RATE = 0.05 #学习率
 LEARNING_RATE_DECAY_FACTOR =  0.999 #控制学习率下降的参数
-KEEP_PROB = 0.95 #节点不Dropout的概率
+KEEP_PROB = 0.75 #节点不Dropout的概率
 # MAX_GRAD_NORM = 5 #用于控制梯度膨胀的参数
 
 HIDDEN_SIZE = 100 #词向量维度
@@ -155,10 +155,10 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         if (cnt + batch_size > max_cnt):  #  如果此时取的数据超过了结尾，就取结尾的batch_size个数据
             cnt = max_cnt - batch_size
         x1 = dataX1[cnt:cnt + batch_size]  #  取前文
-        x1,x1_seqlen = Pad_Zero(x1)
+        x1,x1_seqlen = Pad_Zero(x1)# 补0
         # print(x1)
         x2 = dataX2[cnt:cnt + batch_size]  #  取后文
-        x2, x2_seqlen = Pad_Zero(x2)
+        x2, x2_seqlen = Pad_Zero(x2)# 补0
         y = dataY[cnt:cnt + batch_size]  #  取结果
         # print(y)
         #lstm迭代计算
@@ -177,7 +177,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         correct_num = correct_num + sum(classes == target_index)
         # 写入到文件以及输出到屏幕
         #if is_training and (step+1) % 100 == 0:
-        if (step+1) % 1 == 0:
+        if (step+1) % 100 == 0:
             print("After %d steps, cost : %.3f" % (step, total_costs / (step + 1)))
             file.write("After %d steps, cost : %.3f" % (step, total_costs / (step + 1)) + '\n')
             print("outputs: " + ' '.join([char_set[t] for t in classes]))
