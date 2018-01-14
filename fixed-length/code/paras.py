@@ -31,5 +31,10 @@ TEST_EPOCH_SIZE=math.ceil(TEST_DATA_SIZE / TEST_BATCH_SIZE)
 TRAIN_EPOCH_SIZE=math.ceil(TRAIN_DATA_SIZE / TRAIN_BATCH_SIZE)
 NUM_EPOCH = 50 # 迭代次数
 
+#文件路径
+DATA1_PATH = '../model_data/data1.18876'
+DATA2_PATH = '../model_data/data2.18876'
+TARGET_PATH = '../model_data/target.18876'
+VOCAB_PATH = '../model_data/vocab.100000'
 
 

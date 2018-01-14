@@ -10,30 +10,30 @@ from paras import *
 charset=[]
 #定义主函数并执行
 def main():
-    with open('../model_data/data1.18876', 'r') as f:
-        rows = f.read().split('\n')
+   with open(DATA1_PATH, 'r') as f:
+        rows = f.read().strip().split('\n')
         data1 = [one.split() for one in rows]
         for one in data1:
             for index, ele in enumerate(one):
                 one[index]=int(ele)
-    with open('../model_data/data2.18876', 'r') as f:
-        rows = f.read().split('\n')
+    with open(DATA2_PATH, 'r') as f:
+        rows = f.read().strip().split('\n')
         data2 = [one.split() for one in rows]
         for one in data2:
             for index, ele in enumerate(one):
                 one[index]=int(ele)
-    with open('../model_data/target.18876', 'r') as f:
-        rows = f.read().split('\n')
-        target = [one.split() for one in rows]
-        for one in target:
-            for index, ele in enumerate(one):
-                one[index]=int(ele)
-    with open('../model_data/vocab.100000', 'r') as f:
+    with open(TARGET_PATH, 'r') as f:
+        rows = f.read().strip().split('\n')
+        #target = [one.split() for one in rows]
+        target = [] 
+        for one in rows:
+            target.append(int(one))
+    with open(VOCAB_PATH, 'r') as f:
         global char_set
         char_set = f.read().split('\n')
-
-    target = sum(target, [])
+    
     # print(target)
+
     train_data=(data1[0:TRAIN_DATA_SIZE],data2[0:TRAIN_DATA_SIZE],target[0:TRAIN_DATA_SIZE])
     valid_data=(data1[TRAIN_DATA_SIZE:TRAIN_DATA_SIZE+VALID_DATA_SIZE],
                 data2[TRAIN_DATA_SIZE:TRAIN_DATA_SIZE+VALID_DATA_SIZE],target[TRAIN_DATA_SIZE:TRAIN_DATA_SIZE+VALID_DATA_SIZE])
