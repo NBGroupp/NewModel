@@ -5,15 +5,7 @@ import os
 import numpy as np
 import math
 from model import *
-
-TEST_BATCH_SIZE = 20 #测试数据batch的大小
-#TEST_NUM_STEP = 1 #测试数据截断长度
-GRAM = 3 #LSTM的时间维度
-
-DATA_SIZE = 18876
-TRAIN_DATA_SIZE = int(DATA_SIZE * 0.7)
-TEST_DATA_SIZE = int(DATA_SIZE-TRAIN_DATA_SIZE)
-TEST_EPOCH_SIZE=math.ceil(TEST_DATA_SIZE / TEST_BATCH_SIZE)
+from paras import *
 
 #定义主函数并执行
 def main():
@@ -41,7 +33,8 @@ def main():
         char_set = f.read().split('\n')
     target = sum(target, [])
 
-    test_data=(data1[TRAIN_DATA_SIZE:DATA_SIZE],data2[TRAIN_DATA_SIZE:DATA_SIZE],target[TRAIN_DATA_SIZE:DATA_SIZE])
+    #test_data=(data1[TRAIN_DATA_SIZE:DATA_SIZE],data2[TRAIN_DATA_SIZE:DATA_SIZE],target[TRAIN_DATA_SIZE:DATA_SIZE])
+    test_data=(data1[TRAIN_DATA_SIZE+VALID_DATA_SIZE:DATA_SIZE],data2[TRAIN_DATA_SIZE+VALID_DATA_SIZE:DATA_SIZE],target[TRAIN_DATA_SIZE+VALID_DATA_SIZE:DATA_SIZE])
 
     initializer = tf.random_uniform_initializer(-0.05, 0.05)
     with tf.variable_scope("Proofreading_model", reuse=None, initializer=initializer):

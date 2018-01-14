@@ -4,21 +4,8 @@ import tensorflow as tf
 import os
 import numpy as np
 import train
-
-#参数
-VOCAB_SIZE = 100000 #词典规模
-MAX_TEXT_LENGTH = 50 #最长文本长度
-
-LEARNING_RATE = 0.05 #学习率
-LEARNING_RATE_DECAY_FACTOR =  0.999 #控制学习率下降的参数
-KEEP_PROB = 0.75 #节点不Dropout的概率
-# MAX_GRAD_NORM = 5 #用于控制梯度膨胀的参数
-
-HIDDEN_SIZE = 100 #词向量维度
-PRE_CONTEXT_HIDDEN_SIZE = HIDDEN_SIZE #上文lstm的隐藏层数目
-PRE_CONTEXT_NUM_LAYERS = 1 #上文lstm的深度
-FOL_CONTEXT_HIDDEN_SIZE = HIDDEN_SIZE #下文lstm的隐藏层数目
-FOL_CONTEXT_NUM_LAYERS= 1 #下文lstm的深度
+import time
+from paras import *
 
 class Proofreading_Model(object):
     def __init__(self, is_training, batch_size):
@@ -30,7 +17,7 @@ class Proofreading_Model(object):
         #定义网络参数
         self.learning_rate = tf.Variable(float(LEARNING_RATE), trainable=False, dtype=tf.float32)
         self.learning_rate_decay_op = self.learning_rate.assign(self.learning_rate * LEARNING_RATE_DECAY_FACTOR)
-        self.global_step = tf.Variable(0, trainable=False)
+        self.global_step = 0
         self.batch_size = batch_size
 
         # 定义输入层,其维度是batch_size * num_steps
@@ -82,18 +69,18 @@ class Proofreading_Model(object):
             self.fol_final_state = fol_states  #下文lstm的最终状态
 
         # 综合两个lstm的数据，加权平均
-        self.output = tf.add(pre_outputs,fol_outputs)/2
+        # self.output = tf.add(pre_outputs,fol_outputs)/2
         # 全连接层
-        weight = tf.get_variable("weight", [HIDDEN_SIZE, VOCAB_SIZE])
-        bias = tf.get_variable("bias", [VOCAB_SIZE])
-        self.logits = tf.matmul(self.output, weight) + bias
+        # weight = tf.get_variable("weight", [HIDDEN_SIZE, VOCAB_SIZE])
+        # bias = tf.get_variable("bias", [VOCAB_SIZE])
+        # self.logits = tf.matmul(self.output, weight) + bias
 
         # 简单拼接
-        # output = tf.concat([pre_outputs, fol_outputs], 1)
+        output = tf.concat([pre_outputs, fol_outputs], 1)
         # 全连接层
-        # weight = tf.get_variable("weight", [2*HIDDEN_SIZE, VOCAB_SIZE])
-        # bias = tf.get_variable("bias", [VOCAB_SIZE])
-        # self.logits = tf.matmul(output, weight) + bias
+        weight = tf.get_variable("weight", [2*HIDDEN_SIZE, VOCAB_SIZE])
+        bias = tf.get_variable("bias", [VOCAB_SIZE])
+        self.logits = tf.matmul(output, weight) + bias
 
 
         ''' 定义交叉熵损失函数和平均损失。
@@ -151,6 +138,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
     correct_num = 0  #  正确个数
 
     # 训练一个epoch。
+    start = time.clock()
     for step in range(step_size):
         if (cnt + batch_size > max_cnt):  #  如果此时取的数据超过了结尾，就取结尾的batch_size个数据
             cnt = max_cnt - batch_size
@@ -163,7 +151,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         # print(y)
         #lstm迭代计算
         cost, pre_state, fol_state, outputs, _, __= session.run([model.cost, model.pre_final_state, model.fol_final_state,
-                                                        model.logits, train_op,model.learning_rate_decay_op],
+                                                        model.logits, train_op, model.learning_rate_decay_op],
                                                        feed_dict={model.pre_input: x1, model.fol_input: x2,
                                                                   model.pre_input_seq_length:x1_seqlen,
                                                                   model.fol_input_seq_length:x2_seqlen,
@@ -175,9 +163,13 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         classes = np.argmax(outputs, axis=1)
         target_index = np.array(y).ravel()
         correct_num = correct_num + sum(classes == target_index)
+       
         # 写入到文件以及输出到屏幕
-        #if is_training and (step+1) % 100 == 0:
-        if (step+1) % 100 == 0:
+        if is_training and (step+1) % 100 == 0:
+        #if (step+1) % 100 == 0:
+            end = time.clock()
+            print("%.1f setp/s" % (100.0/(end-start)))
+            start = time.clock()
             print("After %d steps, cost : %.3f" % (step, total_costs / (step + 1)))
             file.write("After %d steps, cost : %.3f" % (step, total_costs / (step + 1)) + '\n')
             print("outputs: " + ' '.join([char_set[t] for t in classes]))
@@ -191,8 +183,9 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
                                                                  model.pre_input_seq_length: x1_seqlen,
                                                                  model.fol_input_seq_length: x2_seqlen,
                                                                  model.targets: y})
-                summary_writer.add_summary(summary_str, step)
-
+                summary_writer.add_summary(summary_str, model.global_step)
+ 
+        model.global_step+=1
         cnt += batch_size
         if (cnt >= max_cnt):
             cnt = 0
