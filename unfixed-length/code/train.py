@@ -10,7 +10,7 @@ from paras import *
 charset=[]
 #定义主函数并执行
 def main():
-   with open(DATA1_PATH, 'r') as f:
+    with open(DATA1_PATH, 'r') as f:
         rows = f.read().strip().split('\n')
         data1 = [one.split() for one in rows]
         for one in data1:
@@ -61,8 +61,7 @@ def main():
 
         # 记录cost
         # 要使用tensorboard，首先定义summary节点，不定义会出错
-        tf.summary.scalar('cost', train_model.cost)
-        merged_summary_op = tf.summary.merge_all()
+        merged_summary_op = train_model.merged_summary_op
         summary_writer = tf.summary.FileWriter('../logs/cost_logs', session.graph)
 
         print("In training:")

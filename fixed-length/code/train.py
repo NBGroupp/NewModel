@@ -61,19 +61,22 @@ def main():
 
         # 记录cost
         # 要使用tensorboard，首先定义summary节点，不定义会出错
-        tf.summary.scalar('cost', train_model.cost)
-        merged_summary_op = tf.summary.merge_all()
-        summary_writer = tf.summary.FileWriter('../logs/cost_logs', session.graph)
+
+        merged_summary_op = train_model.merged_summary_op
+        summary_writer = tf.summary.FileWriter('../logs/cost&acc_logs', session.graph)
 
         print("In training:")
         for i in range(NUM_EPOCH):
-            print("In iteration: %d " % (i + 1))
-            file.write("In iteration: %d\n" % (i + 1))
+            print("In iteration: %d " % (i))
+            file.write("In iteration: %d\n" % (i))
             run_epoch(session, train_model, train_data, train_model.train_op, True,
                       TRAIN_BATCH_SIZE, TRAIN_EPOCH_SIZE, char_set, file, merged_summary_op, summary_writer)
+
+
             #验证集
             run_epoch(session, eval_model, valid_data, tf.no_op(), False,
                       VALID_BATCH_SIZE, VALID_EPOCH_SIZE, char_set, file, False, False)
+
             #保存模型
             print("saving model...")
             saver.save(session, "../ckpt/model.ckpt")

@@ -1,0 +1,5 @@
+In iteration: 0
+After 19 steps, cost : 11.156
+After 39 steps, cost : 10.851
+After 59 steps, cost : 10.819
+After 79 steps, cost : 10.866

@@ -18,6 +18,7 @@ class Proofreading_Model(object):
         self.learning_rate = tf.Variable(float(LEARNING_RATE), trainable=False, dtype=tf.float32)
         self.learning_rate_decay_op = self.learning_rate.assign(self.learning_rate * LEARNING_RATE_DECAY_FACTOR)
         self.global_step = 0
+        self.global_epoch = 0
         self.batch_size = batch_size
 
         # 定义输入层,其维度是batch_size * num_steps
@@ -93,7 +94,28 @@ class Proofreading_Model(object):
         #softmax+交叉熵损失函数
         loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits, labels=self.targets)
 
-        self.cost = tf.reduce_mean(loss)
+        # 记录cost
+        with  tf.variable_scope('cost') as scope:
+            self.cost = tf.reduce_mean(loss)
+            self.ave_cost = tf.Variable(0.0, trainable=False, dtype=tf.float32)
+            self.ave_cost_op = self.ave_cost.assign(tf.divide(
+                tf.add(tf.multiply(self.ave_cost, self.global_step), self.cost), self.global_step+1))
+            #global_step从0开始
+            #tf.summary.scalar('cost', self.cost)
+            tf.summary.scalar('ave_cost', self.ave_cost)
+        # 只在训练模型时定义反向传播操作。
+
+        # 记录accuracy
+        with  tf.variable_scope('accuracy') as scope:
+            correct_prediction = tf.equal(self.targets, tf.cast(tf.argmax(self.logits, -1), tf.int32))
+            self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+            self.ave_accuracy = tf.Variable(0.0, trainable=False, dtype=tf.float32)
+            self.ave_accuracy_op =  self.ave_accuracy.assign(tf.divide(
+                tf.add(tf.multiply(self.ave_accuracy, self.global_step),self.accuracy),self.global_step+1))
+            # global_step从0开始
+            #tf.summary.scalar('accuracy', self.self.accuracy)
+            tf.summary.scalar('ave_accuracy', self.ave_accuracy)
+            # 只在训练模型时定义反向传播操作。
         # 只在训练模型时定义反向传播操作。
         if not is_training: return
 
@@ -106,7 +128,8 @@ class Proofreading_Model(object):
 
         self.train_op = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
 
-
+        self.merged_summary_op = tf.summary.merge_all() # 收集节点
+        
 # 使用给定的模型model在数据data上运行train_op并返回在全部数据上的cost值
 def run_epoch(session, model, data, train_op, is_training, batch_size, step_size, char_set, file,
               summary_op, summary_writer):
@@ -150,8 +173,10 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         y = dataY[cnt:cnt + batch_size]  #  取结果
         # print(y)
         #lstm迭代计算
-        cost, pre_state, fol_state, outputs, _, __= session.run([model.cost, model.pre_final_state, model.fol_final_state,
-                                                        model.logits, train_op, model.learning_rate_decay_op],
+        cost, pre_state, fol_state, outputs, _, _, ave_cost_op, ave_accuracy_op\
+        = session.run([model.cost, model.pre_final_state, model.fol_final_state,
+                                                        model.logits, train_op, model.learning_rate_decay_op,
+                                                        model.ave_cost_op, model.ave_accuracy_op],
                                                        feed_dict={model.pre_input: x1, model.fol_input: x2,
                                                                   model.pre_input_seq_length:x1_seqlen,
                                                                   model.fol_input_seq_length:x2_seqlen,
@@ -163,38 +188,37 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         classes = np.argmax(outputs, axis=1)
         target_index = np.array(y).ravel()
         correct_num = correct_num + sum(classes == target_index)
-       
+        
+        stepinter = 15000
         # 写入到文件以及输出到屏幕
-        if is_training and (step+1) % 100 == 0:
-        #if (step+1) % 100 == 0:
+        if is_training and (step+1) % stepinter == 0:
+        #if (step+1) % stepinter == 0:
             end = time.clock()
-            print("%.1f setp/s" % (100.0/(end-start)))
+            print("%.1f setp/s" % (stepinter/(end-start)))
             start = time.clock()
             print("After %d steps, cost : %.3f" % (step, total_costs / (step + 1)))
             file.write("After %d steps, cost : %.3f" % (step, total_costs / (step + 1)) + '\n')
-            print("outputs: " + ' '.join([char_set[t] for t in classes]))
-            print("targets: " + ' '.join([char_set[t] for t in target_index]))
-            file.write("outputs: " + ' '.join([char_set[t] for t in classes]) + '\n')
-            file.write("targets: " + ' '.join([char_set[t] for t in target_index]) + '\n')
+            # print("outputs: " + ' '.join([char_set[t] for t in classes]))
+            # print("targets: " + ' '.join([char_set[t] for t in target_index]))
+            # file.write("outputs: " + ' '.join([char_set[t] for t in classes]) + '\n')
+            # file.write("targets: " + ' '.join([char_set[t] for t in target_index]) + '\n')
+        if (is_training):
+            model.global_step+=1
 
-
-            if(is_training):
-                summary_str = session.run(summary_op, feed_dict={model.pre_input: x1,model.fol_input: x2,
-                                                                 model.pre_input_seq_length: x1_seqlen,
-                                                                 model.fol_input_seq_length: x2_seqlen,
-                                                                 model.targets: y})
-                summary_writer.add_summary(summary_str, model.global_step)
- 
-        model.global_step+=1
         cnt += batch_size
         if (cnt >= max_cnt):
             cnt = 0
 
+    #收集并将cost加入记录
+    if(is_training):
+        # print ('ave_cost = %.5f' % (total_costs / (step_size + 1)))
+        summary_str = session.run(summary_op)
+        summary_writer.add_summary(summary_str, model.global_epoch)
+        model.global_epoch += 1
     if not is_training:
        acc = correct_num*1.0 / len(dataY) # 求得准确率=正确分类的个数
-       print("acc: %.5f" % acc)
+       print("acc: %.5f\n" % acc)
        file.write("acc: %.5f" % acc)
-       #file.write("acc:" + str(acc))
 
 def Pad_Zero(x):
     x_seqlen=[]
