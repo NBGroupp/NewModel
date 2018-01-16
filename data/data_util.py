@@ -9,6 +9,7 @@ import random
 import pickle
 
 import jieba
+from langconv import *
 
 
 puncs = "＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､\u3000、〃〈〉《》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏﹑﹔·！？｡。!\"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~"
@@ -88,6 +89,7 @@ def clean_corpus(data_path, replace=False, strict=False):
                 #print('Dropping sentence: '+sentence, end='\r')
                 drop += 1
                 continue
+        sentence = Converter('zh-hans').convert(sentence)
         new_corpus_data.add(sentence.replace(' ', ''))
     if len(new_corpus_data) != len(corpus_data):
         if replace:
@@ -136,8 +138,14 @@ def normalize_corpus_data(corpus_data,
     return tuple(p_corpus_data)
 
 
-def cut_word_tokenizer(sentence, full=True):
-    return list(jieba.cut(sentence, cut_all=full))
+def cut_word_tokenizer(sentence):
+    words = set(list(jieba.cut(sentence, cut_all=True)))
+    words.update(list(jieba.cut(sentence)))
+    return list(words)
+
+
+def cut_word_when_tokenize(sentence):
+        return list(jieba.cut(sentence))
 
 
 def create_vocabulary(corpus_data, max_vocabulary_size, tokenizer=cut_word_tokenizer):
@@ -244,4 +252,5 @@ def cutting_words_by_vocab(words, vocab):
             f.write('\n')
         print(str(unk_words)+' '*20)
     return cutted_words, unk_words
+
 

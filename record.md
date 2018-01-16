@@ -72,14 +72,96 @@ one-hot编码的输入进入后使用embedding层将词语映射到维度为100�
 用旧字典对平衡语料库建立输入输出对时：
 
 unk token in total tokens: 808224/11341918  7.13%
+
 unk sentence in total sentences: 352620/527629  66.83%
+
 2 more unks sentence number in total_sentence_number: 201019/527629  38.10%
 
 用新字典对平衡语料库建立输入输出对时：
 
-Normalizing data...  done.%
 unk token in total tokens: 455148/12064876  3.77%
+
 unk sentence in total sentences: 246522/527629  46.72%
+
 2 more unks sentence number in total_sentence_number: 108557/527629  20.57%
 
 从结果来看，新字典的UNK比率比旧字典下降了很多。
+
+# 数据处理
+
+## 原始数据格式
+
+原始数据有三份：
+
+- 国家平衡语料库
+- 百度百科
+- 中文维基
+
+每份都为一个单独的文本文件，压缩为一个gz包。
+文本文件里面为一句一行，未清洗不明字符，未替换数字、字母等。
+
+## 数据预处理
+
+1. 清洗原始语料库
+
+    清洗操作包括：
+
+    - 全角转半角
+    - 繁体转简体
+
+
+    - 删除空行
+    - 删除汉字过少的句子（阈值现定为3）
+    - 删除除汉字外字符的数量大于汉字数量的句子
+    - 删除第一个字符不为汉字的句子
+    - 删除引号未成对的句子
+    - 可选：删除包含了除标点、汉字、字母、数字的字符的句子
+
+    ​
+    对应函数为 `data_util.py` 中的 `clean_corpus(data_path, replace=False, strict=False)`：
+
+    ```
+    Args：
+    data_path: 原始语料库gz包路径
+    replace: 可选，若为 True，保存清洗后的新语料库gz包
+    strict：可选，若为 True，删除包含了除标点、汉字、字母、数字的字符的句子
+
+    Return：
+    new_corpus_data：清洗后语料库，列表，元素为一个句子
+    ```
+
+2. 替换字符
+
+    可替换的字符包括：标点、字母、数字（包括浮点数和百分数）、除汉字字母数字以外的字符
+
+    对应函数为 `data_util.py` 中的 `normalize_corpus_data`：
+
+    ```
+    Args：
+    corpus_data：句子列表
+    normalize_char：可选，若为 True，替换句子中的字母（单词）为 ‘a’
+    normalize_digits：可选，若为 True，替换句子中的数字（浮点数、百分数）为 ‘0’
+    normalize_punctuation：可选，若为 True，替换句子中的标点为 ‘.’，替换的标点在 `data_util.py` 中的 `puncs` 字符串中定义
+    normalize_others：可选，若为 True，替换句子中的除汉字字母数字以外的字符为 'o'
+
+    Return：
+    p_corpus_data：替换后语料库，列表，元素为一个句子
+    ```
+
+
+
+## 建立字典
+
+对应函数为 `data_util.py` 中的 `create_vocabulary`：
+
+```
+Args：
+corpus_data：句子列表
+max_vocabulary_size：字典最大大小，若为 -1, 则不限制大小
+tokenizer：序列化函数，默认为 `data_util.py` 中的 `cut_word_tokenizer`，jeiba全模式分词
+
+Return：
+to_save_vocab_list：大小为 max_vocabulary_size 的字典列表
+vocab：原始字典列表
+tokenized_data：序列化后的语料库列表，二维列表
+```

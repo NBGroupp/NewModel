@@ -179,3 +179,4 @@ if __name__ == '__main__':
     train_sentence_number = int(sys.argv[4])
     k = int(sys.argv[5])
     generate_data(vocab_data_path, train_data_path, max_vocabulary_size, train_sentence_number, k)
+

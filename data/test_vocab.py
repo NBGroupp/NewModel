@@ -95,12 +95,16 @@ def create_vocabularys(corpus_name, corpus_data, vocab_size):
     return origin_vocab, drop_np_vocab
 
 
-def tokenized_train_data(train_corpus_path):
+def tokenized_train_data(train_corpus_path, tokenizer=0):
 
-    corpus_name = splitext(basename(train_corpus_path))
+    """ tokenizer: 0 - cut_word_tokenizer, full=False
+                   1 - filter_name_place_tokenizer """
 
-    if os.path.exists('tokenized_'+corpus_name+'.pkl'):
-        with open('tokenized_'+corpus_name+'.pkl', 'rb') as f:
+    corpus_name = splitext(basename(train_corpus_path))[0]
+    tokenized_corpus_name = 'tokenized_'+corpus_name+'_'+str(tokenizer)+'.pkl'
+
+    if os.path.exists(tokenized_corpus_name):
+        with open(tokenized_corpus_name, 'rb') as f:
             data = pickle.load(f)
             return data
 
@@ -109,11 +113,15 @@ def tokenized_train_data(train_corpus_path):
         normalize_digits=True, normalize_punctuation=False, normalize_others=False)
 
     tokenized_train_corpus_data = []
+    if tokenizer == 0:
+        tokenizer = cut_word_when_tokenize
+    else:
+        tokenizer = filter_name_place_tokenizer
     for i, sentence in enumerate(corpus_data):
         print('Tokenizing training data %.2f%%' % ((i+1)/len(corpus_data)*100), end='\r')
-        tokenized_train_corpus_data.append(cut_word_tokenizer(sentence), full=False)
+        tokenized_train_corpus_data.append(tokenizer(sentence))
 
-    with open('tokenized_'+corpus_name+'.pkl', 'wb') as f:
+    with open(tokenized_corpus_name, 'wb') as f:
         pickle.dump(corpus_data, f)
 
     return tokenized_train_corpus_data
@@ -139,7 +147,7 @@ def test_unk_percent(tokenized_train_corpus_data, vocab):
         total_token_number += len(sentence)
         total_sentence_number += 1
 
-        unk_num_in_sentence = sum([1 for token in sentence if vocab.get(token)])
+        unk_num_in_sentence = sum([1 for token in sentence if not vocab.get(token)])
         for token in sentence:
             if not vocab.get(token):
                 if unks.get(token):
@@ -159,19 +167,21 @@ def test_unk_percent(tokenized_train_corpus_data, vocab):
 
     return unks
 
+
 def run():
 
     vocab_corpus_name, vocab_corpus_data = get_preprocessed_data(VOCAB_CORPUS_PATH)
     origin_vocab, drop_np_vocab = create_vocabularys(vocab_corpus_name, vocab_corpus_data, VOCAB_SIZE)
-    tokenized_train_data = tokenized_train_data(DATA_CORPUS_PATH)
 
-    print('USING ORIGIN VOCAB:')
-    origin_unks = test_unk_percent(tokenized_train_data, origin_vocab)
+    print('\nUSING ORIGIN VOCAB:')
+    tokenized_data = tokenized_train_data(DATA_CORPUS_PATH, 0)
+    origin_unks = test_unk_percent(tokenized_data, origin_vocab)
     with open('origin_unks.pkl', 'wb') as f:
         pickle.dump(origin_unks, f)
 
     print('\nUSING DROP NP VOCAB:')
-    drop_unks = test_unk_percent(tokenized_train_data, drop_np_vocab)
+    tokenized_data = tokenized_train_data(DATA_CORPUS_PATH, 1)
+    drop_unks = test_unk_percent(tokenized_data, drop_np_vocab)
     with open('drop_unks.pkl', 'wb') as f:
         pickle.dump(drop_unks, f)
 
@@ -179,3 +189,4 @@ def run():
 
 if __name__ == '__main__':
     run()
+
