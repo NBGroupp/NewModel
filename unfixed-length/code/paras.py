@@ -37,4 +37,8 @@ DATA2_PATH = '../model_data/data2.18876'
 TARGET_PATH = '../model_data/target.18876'
 VOCAB_PATH = '../model_data/vocab.100000'
 
-
+CKPT_PATH = '../ckpt/'
+MODEL_NAME = 'model.ckpt'
+RESULT_PATH = '../results/results.txt'
+COST_PATH = '../logs/cost_logs'
+TEST_RESULT_PATH = '../results/test_results.txt'

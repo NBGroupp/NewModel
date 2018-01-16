@@ -41,13 +41,24 @@ def main():
         eval_model = Proofreading_Model(False, TEST_BATCH_SIZE)
 
     saver = tf.train.Saver()
-    with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as session:
-        # 读取模型
-        print("loading model...")
-        saver.restore(session, "../ckpt/model.ckpt")
+    # with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as session:
+    with tf.Session() as session:
+        ckpt = tf.train.get_checkpoint_state(CKPT_PATH)
+        # 训练模型。
+        # if(os.path.exists("../ckpt/checkpoint")):
+        if ckpt and ckpt.model_checkpoint_path:
+            # 读取模型
+            print("loading model...")
+            i = int(ckpt.model_checkpoint_path.split('/')[-1].split('-')[-1])
+            # saver.restore(session, "../ckpt/model.ckpt")
+            saver.restore(session, ckpt.model_checkpoint_path)
+            i = int(ckpt.model_checkpoint_path.split('/')[-1].split('-')[-1])
+        else:
+            print("model doesn't exist!")
+            return
         # 测试模型。
-        file = open('../results/test_results.txt', 'w')
-        print("In testing:")
+        file = open(TEST_RESULT_PATH, 'w')
+        print("In testing with model of epoch %d: " % i)
         run_epoch(session, eval_model, test_data, tf.no_op(), False,
                   TEST_BATCH_SIZE, TEST_EPOCH_SIZE, char_set, file,False,False)
         file.close()

@@ -48,39 +48,47 @@ def main():
     saver = tf.train.Saver()
     # with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as session:
     with tf.Session() as session:
+        ckpt = tf.train.get_checkpoint_state(CKPT_PATH)
         # 训练模型。
-        if(os.path.exists("../ckpt/checkpoint")):
+        #if(os.path.exists("../ckpt/checkpoint")):
+        i = 0
+        if ckpt and ckpt.model_checkpoint_path:
             # 读取模型
             print("loading model...")
-            saver.restore(session, "../ckpt/model.ckpt")
-            file = open('../results/results.txt', 'a')
+            #saver.restore(session, "../ckpt/model.ckpt")
+            saver.restore(session, ckpt.model_checkpoint_path)
+            i = int(ckpt.model_checkpoint_path.split('/')[-1].split('-')[-1])
+            file = open(RESULT_PATH, 'a')
         else:
             print("new training...")
             tf.global_variables_initializer().run()
-            file = open('../results/results.txt', 'w')
+            file = open(RESULT_PATH, 'w')
 
         # 记录cost
         # 要使用tensorboard，首先定义summary节点，不定义会出错
-
         merged_summary_op = train_model.merged_summary_op
-        summary_writer = tf.summary.FileWriter('../logs/cost&acc_logs', session.graph)
+        summary_writer = tf.summary.FileWriter(COST_PATH, session.graph)
 
-        print("In training:")
-        for i in range(NUM_EPOCH):
-            print("In iteration: %d " % (i))
-            file.write("In iteration: %d\n" % (i))
+        #print("In training:")
+        #for i in range(NUM_EPOCH):
+        while i < NUM_EPOCH:
+            print("In training:")
+            print("In iteration: %d " % (i + 1))
+            file.write("In iteration: %d\n" % (i + 1))
             run_epoch(session, train_model, train_data, train_model.train_op, True,
                       TRAIN_BATCH_SIZE, TRAIN_EPOCH_SIZE, char_set, file, merged_summary_op, summary_writer)
 
 
             #验证集
+            print("In evaluating:")
             run_epoch(session, eval_model, valid_data, tf.no_op(), False,
                       VALID_BATCH_SIZE, VALID_EPOCH_SIZE, char_set, file, False, False)
 
             #保存模型
             print("saving model...")
-            saver.save(session, "../ckpt/model.ckpt")
-        saver.save(session, "../ckpt/model.ckpt")
+            saver.save(session, CKPT_PATH.join(MODEL_NAME), global_step=i + 1)
+            i += 1
+        saver.save(session, CKPT_PATH.join(MODEL_NAME), global_step=NUM_EPOCH)
         file.close()
 
 if __name__ == "__main__":

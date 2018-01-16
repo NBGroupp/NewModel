@@ -38,3 +38,9 @@ TARGET_PATH = '../model_data/target.18876'
 VOCAB_PATH = '../model_data/vocab.100000'
 
 
+CKPT_PATH = "../ckpt/checkpoint"
+RESULT_PATH = '../results/results.txt', 'a'
+COST_PATH = '../logs/cost_logs'
+TEST_RESULT_PATH = '../results/test_results.txt'
+
+
