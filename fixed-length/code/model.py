@@ -193,8 +193,8 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
             file.write("After %d steps, cost : %.3f" % (step, total_costs / (step + 1)) + '\n')
             # print("outputs: " + ' '.join([char_set[t] for t in classes]))
             # print("targets: " + ' '.join([char_set[t] for t in target_index]))
-            # file.write("outputs: " + ' '.join([char_set[t] for t in classes]) + '\n')
-            # file.write("targets: " + ' '.join([char_set[t] for t in target_index]) + '\n')
+            file.write("outputs: " + ' '.join([char_set[t] for t in classes]) + '\n')
+            file.write("targets: " + ' '.join([char_set[t] for t in target_index]) + '\n')
         if (is_training):
             model.global_step+=1
 
@@ -207,9 +207,9 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         # print ('ave_cost = %.5f' % (total_costs / (step_size + 1)))
         summary_str = session.run(summary_op)
         summary_writer.add_summary(summary_str, model.global_epoch)
-        model.global_epoch += 1
+        #model.global_epoch += 1
     if not is_training:
        acc = correct_num*1.0 / len(dataY) # 求得准确率=正确分类的个数
        print("acc: %.5f\n" % acc)
-       file.write("acc: %.5f" % acc)
+       file.write("acc: %.5f\n" % acc)
        #file.write("acc:" + str(acc))

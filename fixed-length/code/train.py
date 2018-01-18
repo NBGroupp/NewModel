@@ -73,22 +73,23 @@ def main():
         #for i in range(NUM_EPOCH):
         while i < NUM_EPOCH:
             print("In training:")
-            print("In iteration: %d " % (i + 1))
-            file.write("In iteration: %d\n" % (i + 1))
+            print("In iteration: %d " % i)
+            file.write("In iteration: %d\n" % i)
             run_epoch(session, train_model, train_data, train_model.train_op, True,
-                      TRAIN_BATCH_SIZE, TRAIN_EPOCH_SIZE, char_set, file, merged_summary_op, summary_writer)
+                      TRAIN_BATCH_SIZE, TRAIN_STEP_SIZE, char_set, file, merged_summary_op, summary_writer)
 
 
             #验证集
             print("In evaluating:")
             run_epoch(session, eval_model, valid_data, tf.no_op(), False,
-                      VALID_BATCH_SIZE, VALID_EPOCH_SIZE, char_set, file, False, False)
+                      VALID_BATCH_SIZE, VALID_STEP_SIZE, char_set, file, False, False)
 
+            i += 1
+            train_model.global_epoch += 1
             #保存模型
             print("saving model...")
-            saver.save(session, CKPT_PATH.join(MODEL_NAME), global_step=i + 1)
-            i += 1
-        saver.save(session, CKPT_PATH.join(MODEL_NAME), global_step=NUM_EPOCH)
+            saver.save(session, CKPT_PATH+MODEL_NAME, global_step=i)
+        saver.save(session, CKPT_PATH+MODEL_NAME, global_step=NUM_EPOCH)
         file.close()
 
 if __name__ == "__main__":

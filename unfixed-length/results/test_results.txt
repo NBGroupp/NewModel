@@ -1,0 +1,4 @@
+After 99 steps, cost : 14.501
+outputs: 的
+targets: 的
+acc: 0.07000

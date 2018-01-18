@@ -37,7 +37,7 @@ def main():
 
     initializer = tf.random_uniform_initializer(-0.05, 0.05)
     with tf.variable_scope("Proofreading_model", reuse=None, initializer=initializer):
-        eval_model = Proofreading_Model(False, TEST_BATCH_SIZE, GRAM)
+        test_model = Proofreading_Model(False, TEST_BATCH_SIZE, GRAM)
 
     saver = tf.train.Saver()
     #with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as session:
@@ -57,8 +57,8 @@ def main():
         # 测试模型。
         file = open(TEST_RESULT_PATH, 'w')
         print("In testing with model of epoch %d: " % i)
-        run_epoch(session, eval_model, test_data, tf.no_op(), False,
-                  TEST_BATCH_SIZE, TEST_EPOCH_SIZE, char_set, file,False,False)
+        run_epoch(session, test_model, test_data, tf.no_op(), False,
+                  TEST_BATCH_SIZE, TEST_STEP_SIZE, char_set, file,False,False)
         file.close()
 
 if __name__ == "__main__":

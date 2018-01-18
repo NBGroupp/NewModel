@@ -62,7 +62,6 @@ def main():
             train_model.global_epoch=eval_model.global_epoch=i
             eval_model.global_step=i*VALID_STEP_SIZE
             train_model.global_step=i*TRAIN_STEP_SIZE
-            i+=1
         else:
             print("new training...")
             tf.global_variables_initializer().run()
@@ -76,10 +75,9 @@ def main():
         #print("In training:")
         #for i in range(NUM_EPOCH):
         while i < NUM_EPOCH:
+            print("In training:")
             print("In iteration: %d " % i)
             file.write("In iteration: %d\n" % i)
-            
-            print("In training:")
             run_epoch(session, train_model, train_data, train_model.train_op, True,
                       TRAIN_BATCH_SIZE, TRAIN_STEP_SIZE, char_set, file, merged_summary_op, summary_writer)
             
@@ -91,12 +89,18 @@ def main():
             print("In evaluating:")
             run_epoch(session, eval_model, valid_data, tf.no_op(), False,
                       VALID_BATCH_SIZE, VALID_STEP_SIZE, char_set, file, False, False)
-                                
             i += 1
             train_model.global_epoch += 1
-                    
+            
         #saver.save(session, CKPT_PATH+MODEL_NAME, global_step = NUM_EPOCH)
         file.close()
+        # 测试模型。
+        file = open(TEST_RESULT_PATH, 'w')
+        print("In testing with model of epoch %d: " % i)
+        run_epoch(session, eval_model, test_data, tf.no_op(), False,
+                  TEST_BATCH_SIZE, TEST_STEP_SIZE, char_set, file,False,False)
+        file.close()    
+        
 
 if __name__ == "__main__":
     main()
