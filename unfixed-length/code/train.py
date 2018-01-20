@@ -90,8 +90,7 @@ def main():
             #验证集
             print("In evaluating:")
             run_epoch(session, eval_model, valid_data, tf.no_op(), False,
-                      VALID_BATCH_SIZE, VALID_STEP_SIZE, char_set, file, False, False)
-                                
+                      VALID_BATCH_SIZE, VALID_STEP_SIZE, char_set, file, False, False)                                            
             i += 1
             train_model.global_epoch += 1
                     

@@ -98,6 +98,8 @@ def main():
         file = open(TEST_RESULT_PATH, 'w')
         print("In testing with model of epoch %d: " % i)
         run_epoch(session, eval_model, test_data, tf.no_op(), False,
+                  TEST_BATCH_SIZE, TEST_STEP_SIZE, char_set, False,False,False)
+        run_epoch(session, eval_model, test_data, tf.no_op(), False,
                   TEST_BATCH_SIZE, TEST_STEP_SIZE, char_set, file,False,False)
         file.close()    
         

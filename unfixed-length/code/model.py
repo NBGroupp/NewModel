@@ -184,6 +184,8 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
                                                                   model.pre_initial_state: pre_state,
                                                                   model.fol_initial_state: fol_state
                                                                   })
+        if not file:
+            continue;       
         total_costs += cost  #  求得总costs
         classes = np.argmax(outputs, axis=1)
         target_index = np.array(y).ravel()
@@ -192,7 +194,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         stepinter = 100
         # 写入到文件以及输出到屏幕
         #if is_training and (step+1) % stepinter == 0:
-        if (step+1) % stepinter == 0:
+        if ((step+1) % stepinter == 0) and file:
             end = time.clock()
             print("%.1f setp/s" % (stepinter/(end-start)))
             start = time.clock()
