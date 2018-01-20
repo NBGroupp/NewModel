@@ -25,6 +25,20 @@ PAD = 'PAD'
 PAD_INDEX = 1
 pre_vocab = [UNK, PAD]
 
+SEG_MODEL_PATH = './ltp_data_v3.4.0/cws.model'
+TAG_MODEL_PATH = './ltp_data_v3.4.0/pos.model'
+
+from pyltp import Segmentor, Postagger
+segmentor = Segmentor()
+segmentor.load(SEG_MODEL_PATH)
+postagger = Postagger()
+postagger.load(TAG_MODEL_PATH)
+
+name_tag = 'nh'
+place_tag = 'ns'
+name_replace_ch = 'N'
+place_replace_ch = 'P'
+
 
 def _is_chinese(c):
     return '\u4e00' <= c <= '\u9fff'
@@ -147,6 +161,24 @@ def cut_word_tokenizer(sentence):
 def cut_word_when_tokenize(sentence):
         return list(jieba.cut(sentence))
 
+def cut_char_tokenizer(sentence):
+    return [one for one in sentence]
+
+def filter_name_place_tokenizer(sentence):
+
+    words = list(jieba.cut(sentence))
+    tags = list(postagger.postag(words))
+
+    while name_tag in tags:
+        words[tags.index(name_tag)] = name_replace_ch
+        tags[tags.index(name_tag)] = None
+
+    while place_tag in tags:
+        words[tags.index(place_tag)] = place_replace_ch
+        tags[tags.index(place_tag)] = None
+
+    return words
+
 
 def create_vocabulary(corpus_data, max_vocabulary_size, tokenizer=cut_word_tokenizer):
     """ create vocabulary from data file(contain one sentence per line)
@@ -164,7 +196,7 @@ def create_vocabulary(corpus_data, max_vocabulary_size, tokenizer=cut_word_token
     for i, line in enumerate(corpus_data):
         print("Creating vocabulary... %.2f%%" % ((i+1)/len(corpus_data)*100), end='\r')
         tokens = tokenizer(line)
-        tokenized_data.append(tokens)
+        #tokenized_data.append(tokens)
         for word in tokens:
             if not word:
                 continue

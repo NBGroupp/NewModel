@@ -11,7 +11,8 @@ from os.path import join
 from data_util import *
 
 
-def create_input_target_data(tokenized_data, vocab, k, unk_percent, vectorize):
+def create_input_target_data(tokenized_data, vocab, k,
+                             max_unk_percent_in_sentence, vectorize=True, unk_percent=1):
 
     paddings = [PAD for i in range(k)]
     total_unk = len(tokenized_data) * unk_percent
@@ -19,31 +20,25 @@ def create_input_target_data(tokenized_data, vocab, k, unk_percent, vectorize):
     data1 = []
     data2 = []
     target = []
-    current_unk = 0
-    unks = {}
+    unk_data1 = []
+    unk_data2 = []
+    unk_target = []
 
     for i, one in enumerate(tokenized_data):
 
         print('Creating input and target data... %.2f%%'
               % ((i+1)/len(tokenized_data)*100), end='\r')
 
-        #unk_in_sentence = 1 if [1 for token in one if not vocab.get(token)] else 0
-        unk_in_sentence = 0
-        for token in one:
-            if not vocab.get(token):
-                unk_in_sentence = 1
-                if not unks.get(token):
-                    unks[token] = 1
-                else:
-                    unks[token] += 1
-
-        current_unk += unk_in_sentence
-        if unk_in_sentence and current_unk > total_unk:
+        unk_num_in_sentence = sum([1 for token in one if not vocab.get(token)])
+        unk_in_sentence = 1 if unk_num_in_sentence > 0 else 0
+        if unk_num_in_sentence / len(one) > max_unk_percent_in_sentence:
             continue
+        #if unk_in_sentence:  # NOTICE: drop all unks
+        #    continue
 
-        if k == -1:
+        if k == -1:  # not implement whether vectorize
             for i, ch in enumerate(one):
-                if ch in puncs or ch == '0' or ch =='a' or not vocab.get(ch):
+                if ch in puncs or ch == '0' or ch =='a' or not vocab.get(ch) or ch=='N' or ch =='P':
                     continue
                 pres = []
                 lats = []
@@ -55,15 +50,20 @@ def create_input_target_data(tokenized_data, vocab, k, unk_percent, vectorize):
                 if i == len(one)-1:
                     lats.append(str(vocab.get(PAD)))
                 else:
-                    lats = [str(vocab.get(lat_c, UNK_INDEX)) for lat_c in one[:i]]
+                    lats = [str(vocab.get(lat_c, UNK_INDEX)) for lat_c in one[i+1:]]
 
-                data1.append(pres)
-                data2.append(lats)
-                target.append(str(vocab.get(ch)))
-        else:
+                if not unk_in_sentence:
+                    data1.append(pres)
+                    data2.append(lats)
+                    target.append(str(vocab.get(ch)))
+                else:
+                    unk_data1.append(pres)
+                    unk_data2.append(lats)
+                    unk_target.append(str(vocab.get(ch)))
+        else:  # not implement mixing unk
             tokens = paddings + one + paddings
             for i, ch in enumerate(one):
-                if ch in puncs or ch == '0' or ch == 'a' or not vocab.get(ch):
+                if ch in puncs or ch == '0' or ch == 'a' or not vocab.get(ch) or ch=='N' or ch=='P':
                     continue
                 if vectorize:
                     pres = []
@@ -77,36 +77,58 @@ def create_input_target_data(tokenized_data, vocab, k, unk_percent, vectorize):
                     data2.append(tokens[i+k+1:i+k+1+k])
                 target.append(str(vocab.get(ch)))
 
-    unks = sorted(unks, key=lambda x: unks[x], reverse=True)
+    if k == -1:  # mixing unk
+        print('Mixing unks...', end='\r')
+        unk_num = len(data1) * unk_percent
+        if unk_num > len(unk_data1):  # lack unk datas
+            unk_indices = list(range(len(unk_data1)))
+        else:
+            unk_indices = random.sample(range(len(unk_data1)), unk_num)
+        for index in unk_indices:
+            insert_index = random.randrange(0, len(data1))
+            data1.insert(insert_index, unk_data1[index])
+            data2.insert(insert_index, unk_data2[index])
+            target.insert(insert_index, unk_target[index])
+        print('Mixing {} unks into {} data'.format(unk_num, len(data1)))
 
-    return data1, data2, target, current_unk, unks
+    return data1, data2, target
 
 
-def generate_data(vocab_data_path, train_data_path, max_vocabulary_size, train_sentence_number, k):
+def generate_data(vocab_data_path, train_data_path, max_vocabulary_size,
+                  max_unk_percent_in_sentence, unk_percent=1, k=-1):
 
     normalize_punctuation = False
-    unk_percent = 0.05
 
-    data_dir = join(os.getcwd(), time.strftime('%m-%d-%H-%M', time.localtime(time.time())))
+    vocab_corpus_name = splitext(basename(vocab_data_path))[0]
+    train_corpus_name = splitext(basename(train_data_path))[0]
+    data_dir = join(os.getcwd(), time.strftime('%y.%m.%d-%H:%M', time.localtime(time.time())))
     if not exists(data_dir):
         os.mkdir(data_dir)
+    # log info
+    with open(join(data_dir, 'log'), 'w') as f:
+        f.write('Vocab builded from:' + vocab_corpus_name + '\n')
+        f.write('Train data builded from: ' + train_corpus_name + '\n')
+        f.write('max_vocabulary_size: ' + str(max_vocabulary_size) + '\n')
+        f.write('k: ' + str(k) + '\n')
+        f.write('max unk percent in one sentence: ' + str(max_unk_percent_in_sentence) + '\n')
+        f.write('unk percent in total data(): {}\n'.format(
+            'if 1, means that all unks mixed into data, not whole data contain unk', str(unk_percent))
     print('data will be saved in {}'.format(data_dir))
 
     # preprocess vocab data
-    #vocab_corpus_name = splitext(basename(vocab_data_path))[0]
-    #processed_vocab_corpus_name = vocab_corpus_name +'.processed.pkl'
-    #if exists(processed_vocab_corpus_name):
-    #    print('Loading preprocessed corpus data from {}...'.format(processed_vocab_corpus_name))
-    #    with open(processed_vocab_corpus_name, 'rb') as f:
-    #        vocab_corpus_data = pickle.load(f)
-    #else:
-    #    vocab_corpus_data = clean_corpus(vocab_data_path, strict=True)
-    #    vocab_corpus_data = normalize_corpus_data(
-    #        vocab_corpus_data, normalize_char=True,
-    #        normalize_digits=True, normalize_punctuation=False, normalize_others=False
-    #    )
-    #    with open(processed_vocab_corpus_name, 'wb') as f:
-    #        pickle.dump(vocab_corpus_data, f)
+    normalized_vocab_corpus_name = vocab_corpus_name +'.normalized.pkl'
+    if exists(normalized_vocab_corpus_name):
+        print('Loading preprocessed corpus data from {}...'.format(normalized_vocab_corpus_name))
+        with open(normalized_vocab_corpus_name, 'rb') as f:
+            vocab_corpus_data = pickle.load(f)
+    else:
+        vocab_corpus_data = clean_corpus(vocab_data_path, strict=True)
+        vocab_corpus_data = normalize_corpus_data(
+            vocab_corpus_data, normalize_char=True,
+            normalize_digits=True, normalize_punctuation=False, normalize_others=False
+        )
+        with open(processed_vocab_corpus_name, 'wb') as f:
+            pickle.dump(vocab_corpus_data, f)
 
     # create vocabulary
     # processed_vocab_name = vocab_corpus_name + '.vocab.' + str(max_vocabulary_size)
@@ -123,11 +145,10 @@ def generate_data(vocab_data_path, train_data_path, max_vocabulary_size, train_s
     vocab = {key: vocab.index(key) for key in vocab}
 
     # tokenized train data
-    train_corpus_name = splitext(basename(train_data_path))[0]
-    processed_train_corpus_name = train_corpus_name + '.processed.pkl'
-    if exists(processed_train_corpus_name):
-        print('Loading preprocessed corpus data from {}...'.format(processed_train_corpus_name))
-        with open(processed_train_corpus_name, 'rb') as f:
+    tokenized_train_corpus_name = train_corpus_name + '.tokenized.pkl'
+    if exists(tokenized_train_corpus_name):
+        print('Loading tokenized corpus data from {}...'.format(tokenized_train_corpus_name))
+        with open(tokenized_train_corpus_name, 'rb') as f:
             tokenized_train_corpus_data = pickle.load(f)
     else:
         train_corpus_data = clean_corpus(train_data_path, strict=True)
@@ -139,23 +160,14 @@ def generate_data(vocab_data_path, train_data_path, max_vocabulary_size, train_s
         tokenized_train_corpus_data = []
         for i, sentence in enumerate(train_corpus_data):
             print('Tokenizing training data %.2f%%' % ((i+1)/len(train_corpus_data)*100), end='\r')
-            tokenized_train_corpus_data.append(cut_word_tokenizer(sentence, full=False))
+            tokenized_train_corpus_data.append(filter_name_place_tokenizer(sentence))
 
-        with open(processed_train_corpus_name, 'wb') as f:
+        with open(tokenized_train_corpus_name, 'wb') as f:
             pickle.dump(tokenized_train_corpus_data, f)
 
     # create input and targrt data
-    if train_sentence_number > 0:
-        data1, data2, target, current_unk, unks = create_input_target_data(
-            tokenized_train_corpus_data[:train_sentence_number], vocab, k, unk_percent, vectorize=True)
-    else:
-        data1, data2, target, current_unk, unks = create_input_target_data(
-            tokenized_train_corpus_data, vocab, k, unk_percent, vectorize=True)
-
-    data_len = len(data1)
-    # split into dev(0.2), val(0.2), train(0.6)
-    two_split_index = int(data_len/10*2)
-    four_split_index = int(data_len/10*4)
+    data1, data2, target = create_input_target_data(
+        tokenized_train_corpus_data, vocab, k, max_unk_percent_in_sentence, unk_percent, vectorize=True)
 
     # save corpus
     with open(join(data_dir, 'data1.'+str(len(data1))), 'w') as f:
@@ -165,18 +177,14 @@ def generate_data(vocab_data_path, train_data_path, max_vocabulary_size, train_s
         for one in data2:
             f.write(' '.join(one)+'\n')
     with open(join(data_dir, 'target.'+str(len(target))), 'w') as f:
-        for one in target:
-            f.write(one+'\n')
-    with open(join(data_dir, 'unk.'+str(len(unks))), 'w') as f:
-        f.write('\n'.join(unks))
-    print('{} unk pairs in {}'.format(current_unk, sum([len(s) for s in tokenized_train_corpus_data])))
+        f.write('\n'.join(target))
 
 
 if __name__ == '__main__':
+
     vocab_data_path = sys.argv[1]
     train_data_path = sys.argv[2]
     max_vocabulary_size = int(sys.argv[3])
-    train_sentence_number = int(sys.argv[4])
-    k = int(sys.argv[5])
-    generate_data(vocab_data_path, train_data_path, max_vocabulary_size, train_sentence_number, k)
+    max_unk_percent_in_sentence = float(sys.argv[4])
+    generate_data(vocab_data_path, train_data_path, max_vocabulary_size, max_unk_percent_in_sentence)
 
