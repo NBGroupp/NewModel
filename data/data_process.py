@@ -112,27 +112,27 @@ def generate_data(vocab_data_path, train_data_path, max_vocabulary_size,
         f.write('k: ' + str(k) + '\n')
         f.write('max unk percent in one sentence: ' + str(max_unk_percent_in_sentence) + '\n')
         f.write('unk percent in total data(): {}\n'.format(
-            'if 1, means that all unks mixed into data, not whole data contain unk', str(unk_percent))
+            'if 1, means that all unks mixed into data, not whole data contain unk', str(unk_percent)))
     print('data will be saved in {}'.format(data_dir))
 
-    # preprocess vocab data
-    normalized_vocab_corpus_name = vocab_corpus_name +'.normalized.pkl'
-    if exists(normalized_vocab_corpus_name):
-        print('Loading preprocessed corpus data from {}...'.format(normalized_vocab_corpus_name))
-        with open(normalized_vocab_corpus_name, 'rb') as f:
-            vocab_corpus_data = pickle.load(f)
-    else:
-        vocab_corpus_data = clean_corpus(vocab_data_path, strict=True)
-        vocab_corpus_data = normalize_corpus_data(
-            vocab_corpus_data, normalize_char=True,
-            normalize_digits=True, normalize_punctuation=False, normalize_others=False
-        )
-        with open(processed_vocab_corpus_name, 'wb') as f:
-            pickle.dump(vocab_corpus_data, f)
+    ## preprocess vocab data
+    #normalized_vocab_corpus_name = vocab_corpus_name +'.normalized.pkl'
+    #if exists(normalized_vocab_corpus_name):
+    #    print('Loading preprocessed corpus data from {}...'.format(normalized_vocab_corpus_name))
+    #    with open(normalized_vocab_corpus_name, 'rb') as f:
+    #        vocab_corpus_data = pickle.load(f)
+    #else:
+    #    vocab_corpus_data = clean_corpus(vocab_data_path, strict=True)
+    #    vocab_corpus_data = normalize_corpus_data(
+    #        vocab_corpus_data, normalize_char=True,
+    #        normalize_digits=True, normalize_punctuation=False, normalize_others=False
+    #    )
+    #    with open(processed_vocab_corpus_name, 'wb') as f:
+    #        pickle.dump(vocab_corpus_data, f)
 
     # create vocabulary
     # processed_vocab_name = vocab_corpus_name + '.vocab.' + str(max_vocabulary_size)
-    processed_vocab_name = 'vocab.112801'
+    processed_vocab_name = 'vocab.110780'
     if exists(processed_vocab_name):
         print('Loading vocab from {}...'.format(processed_vocab_name))
         with open(processed_vocab_name, 'r') as f:
@@ -167,7 +167,7 @@ def generate_data(vocab_data_path, train_data_path, max_vocabulary_size,
 
     # create input and targrt data
     data1, data2, target = create_input_target_data(
-        tokenized_train_corpus_data, vocab, k, max_unk_percent_in_sentence, unk_percent, vectorize=True)
+        tokenized_train_corpus_data, vocab, k, max_unk_percent_in_sentence, unk_percent)
 
     # save corpus
     with open(join(data_dir, 'data1.'+str(len(data1))), 'w') as f:
