@@ -42,3 +42,5 @@ MODEL_NAME = 'model.ckpt'
 RESULT_PATH = '../results/results.txt'
 COST_PATH = '../logs/cost&accuracy_logs'
 TEST_RESULT_PATH = '../results/test_results.txt'
+
+stepinter = 2000
