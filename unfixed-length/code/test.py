@@ -62,7 +62,7 @@ def main():
         # 测试模型。
         file = open(TEST_RESULT_PATH, 'w')
         print("In testing with model of epoch %d: " % (i-1))
-        run_epoch(session, eval_model, valid_data, tf.no_op(), False,
+        run_epoch(session, test_model, test_data, tf.no_op(), False,
                   TEST_BATCH_SIZE, TEST_BATCH_SIZE, char_set, False, False, False) 
         run_epoch(session, test_model, test_data, tf.no_op(), False,
                   TEST_BATCH_SIZE, TEST_STEP_SIZE, char_set, file,False,False)

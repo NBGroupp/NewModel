@@ -184,8 +184,13 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
                                                                   model.pre_initial_state: pre_state,
                                                                   model.fol_initial_state: fol_state
                                                                   })
+        if (is_training):
+            model.global_step+=1
+        cnt += batch_size
+        if (cnt >= max_cnt):
+            cnt = 0        
         if not file:
-            continue;       
+            continue     
         total_costs += cost  #  求得总costs
         classes = np.argmax(outputs, axis=1)
         target_index = np.array(y).ravel()
@@ -204,13 +209,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
             # print("targets: " + ' '.join([char_set[t] for t in target_index]))
             file.write("outputs: " + ' '.join([char_set[t] for t in classes]) + '\n')
             file.write("targets: " + ' '.join([char_set[t] for t in target_index]) + '\n')
-        if (is_training):
-            model.global_step+=1
-
-        cnt += batch_size
-        if (cnt >= max_cnt):
-            cnt = 0
-
+     
     #收集并将cost加入记录
     if(is_training):
         # print ('ave_cost = %.5f' % (total_costs / (step_size + 1)))
@@ -222,7 +221,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
                                                                   model.fol_initial_state: fol_state
                                                                   })
         summary_writer.add_summary(summary_str, model.global_epoch)
-    if not is_training:
+    if not is_training and file:
        acc = correct_num*1.0 / len(dataY) # 求得准确率=正确分类的个数
        print("acc: %.5f\n" % acc)
        file.write("acc: %.5f\n" % acc)
