@@ -57,7 +57,7 @@ def main():
             train_model.global_epoch=eval_model.global_epoch=i
             eval_model.global_step=i*VALID_STEP_SIZE
             train_model.global_step=i*TRAIN_STEP_SIZE
-            i+=1
+            #i+=1
             # run_epoch(session, eval_model, train_data, tf.no_op(), False,
             #       TRAIN_BATCH_SIZE, TRAIN_BATCH_SIZE, char_set, False, False, False)
         else:
