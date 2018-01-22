@@ -11,19 +11,19 @@ charset=[]
 #定义主函数并执行
 def main():
     #train_data = data_init()
-    with open(DATA1_PATH, 'r') as f:
+    with open(DATA1_PATH, 'r', encoding='utf-8') as f:
         rows = f.read().strip().split('\n')
         data1 = [one.split() for one in rows]
         for one in data1:
             for index, ele in enumerate(one):
                 one[index]=int(ele)
-    with open(TARGET_PATH, 'r') as f:
+    with open(TARGET_PATH, 'r', encoding='utf-8') as f:
         rows = f.read().strip().split('\n')
         #target = [one.split() for one in rows]
         target = [] 
         for one in rows:
             target.append(int(one))
-    with open(VOCAB_PATH, 'r') as f:
+    with open(VOCAB_PATH, 'r', encoding='utf-8') as f:
         global char_set
         char_set = f.read().split('\n')
     
