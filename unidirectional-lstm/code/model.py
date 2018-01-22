@@ -163,7 +163,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         target_index = np.array(y).ravel()
         correct_num = correct_num + sum(classes == target_index)
         
-        stepinter = 100
+        #stepinter = 100
         # 写入到文件以及输出到屏幕
         #if is_training and (step+1) % stepinter == 0:
         if ((step+1) % stepinter == 0) and file:
