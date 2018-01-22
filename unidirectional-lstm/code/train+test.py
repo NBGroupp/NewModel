@@ -30,7 +30,7 @@ def main():
 
     train_data=(data1[0:TRAIN_DATA_SIZE],target[0:TRAIN_DATA_SIZE])
     valid_data=(data1[TRAIN_DATA_SIZE:TRAIN_DATA_SIZE+VALID_DATA_SIZE],target[TRAIN_DATA_SIZE:TRAIN_DATA_SIZE+VALID_DATA_SIZE])
-    test_data=(data1[TRAIN_DATA_SIZE+VALID_DATA_SIZE:DATA_SIZE],data2[TRAIN_DATA_SIZE+VALID_DATA_SIZE:DATA_SIZE],target[TRAIN_DATA_SIZE+VALID_DATA_SIZE:DATA_SIZE])
+    test_data=(data1[TRAIN_DATA_SIZE+VALID_DATA_SIZE:DATA_SIZE],target[TRAIN_DATA_SIZE+VALID_DATA_SIZE:DATA_SIZE])
 
     initializer = tf.random_uniform_initializer(-0.05, 0.05)
     with tf.variable_scope("Proofreading_model", reuse=None, initializer=initializer):
