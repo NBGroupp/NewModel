@@ -209,7 +209,10 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
             # print("targets: " + ' '.join([char_set[t] for t in target_index]))
             file.write("outputs: " + ' '.join([char_set[t] for t in classes]) + '\n')
             file.write("targets: " + ' '.join([char_set[t] for t in target_index]) + '\n')
-     
+    
+    print("After this epoch, cost : %.3f" % (total_costs / (step_size + 1)))
+    file.write("After this epoch, cost : %.3f" % (total_costs / (step_size + 1)) + '\n')
+    
     #收集并将cost加入记录
     if(is_training):
         # print ('ave_cost = %.5f' % (total_costs / (step_size + 1)))
