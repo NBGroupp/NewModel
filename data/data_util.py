@@ -155,7 +155,7 @@ def cut_word_tokenizer(sentence):
 
 
 def cut_word_when_tokenize(sentence):
-        return list(jieba.cut(sentence))
+    return list(jieba.cut(sentence))
 
 def cut_char_tokenizer(sentence):
     return [one for one in sentence]
