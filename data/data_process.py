@@ -79,17 +79,18 @@ def create_input_target_data(tokenized_data, vocab, k,
 
     if k == -1:  # mixing unk
         print('Mixing unks...', end='\r')
-        unk_num = len(data1) * unk_percent
+        unk_num = int(len(data1) * unk_percent)
         if unk_num > len(unk_data1):  # lack unk datas
             unk_indices = list(range(len(unk_data1)))
         else:
             unk_indices = random.sample(range(len(unk_data1)), unk_num)
+        print('no unk data: {}, to mix unk data: {}'.format(len(data1), len(unk_indices)))
         for index in unk_indices:
             insert_index = random.randrange(0, len(data1))
             data1.insert(insert_index, unk_data1[index])
             data2.insert(insert_index, unk_data2[index])
             target.insert(insert_index, unk_target[index])
-        print('Mixing {} unks into {} data'.format(unk_num, len(data1)))
+        print('Mixing {} unks into {} data'.format(len(unk_indices), len(data1)))
 
     return data1, data2, target
 
@@ -111,34 +112,34 @@ def generate_data(vocab_data_path, train_data_path, max_vocabulary_size,
         f.write('max_vocabulary_size: ' + str(max_vocabulary_size) + '\n')
         f.write('k: ' + str(k) + '\n')
         f.write('max unk percent in one sentence: ' + str(max_unk_percent_in_sentence) + '\n')
-        f.write('unk percent in total data(): {}\n'.format(
+        f.write('unk percent in total data({}): {}\n'.format(
             'if 1, means that all unks mixed into data, not whole data contain unk', str(unk_percent)))
     print('data will be saved in {}'.format(data_dir))
 
-    ## preprocess vocab data
-    #normalized_vocab_corpus_name = vocab_corpus_name +'.normalized.pkl'
-    #if exists(normalized_vocab_corpus_name):
-    #    print('Loading preprocessed corpus data from {}...'.format(normalized_vocab_corpus_name))
-    #    with open(normalized_vocab_corpus_name, 'rb') as f:
-    #        vocab_corpus_data = pickle.load(f)
-    #else:
-    #    vocab_corpus_data = clean_corpus(vocab_data_path, strict=True)
-    #    vocab_corpus_data = normalize_corpus_data(
-    #        vocab_corpus_data, normalize_char=True,
-    #        normalize_digits=True, normalize_punctuation=False, normalize_others=False
-    #    )
-    #    with open(processed_vocab_corpus_name, 'wb') as f:
-    #        pickle.dump(vocab_corpus_data, f)
+    # preprocess vocab data
+    normalized_vocab_corpus_name = vocab_corpus_name +'.normalized.pkl'
+    if exists(normalized_vocab_corpus_name):
+        print('Loading preprocessed corpus data from {}...'.format(normalized_vocab_corpus_name))
+        with open(normalized_vocab_corpus_name, 'rb') as f:
+            vocab_corpus_data = pickle.load(f)
+    else:
+        vocab_corpus_data = clean_corpus(vocab_data_path, strict=True)
+        vocab_corpus_data = normalize_corpus_data(
+            vocab_corpus_data, normalize_char=True,
+            normalize_digits=True, normalize_punctuation=False, normalize_others=False
+        )
+        with open(normalized_vocab_corpus_name, 'wb') as f:
+            pickle.dump(vocab_corpus_data, f)
 
     # create vocabulary
-    # processed_vocab_name = vocab_corpus_name + '.vocab.' + str(max_vocabulary_size)
-    processed_vocab_name = 'vocab.110780'
+    processed_vocab_name = vocab_corpus_name + '.vocab.' + str(max_vocabulary_size)
+    #processed_vocab_name = 'vocab.5000'
     if exists(processed_vocab_name):
         print('Loading vocab from {}...'.format(processed_vocab_name))
         with open(processed_vocab_name, 'r') as f:
             vocab = f.read().split('\n')
     else:
-        vocab, _, _= create_vocabulary(vocab_corpus_data, max_vocabulary_size)
+        vocab, _, _= create_vocabulary(vocab_corpus_data, max_vocabulary_size, tokenizer=cut_char_tokenizer)
         with open(processed_vocab_name, 'w') as f:
             f.write('\n'.join(vocab))
     # change to map
@@ -151,23 +152,29 @@ def generate_data(vocab_data_path, train_data_path, max_vocabulary_size,
         with open(tokenized_train_corpus_name, 'rb') as f:
             tokenized_train_corpus_data = pickle.load(f)
     else:
-        train_corpus_data = clean_corpus(train_data_path, strict=True)
-        train_corpus_data = normalize_corpus_data(
-            train_corpus_data, normalize_char=True,
-            normalize_digits=True, normalize_punctuation=False, normalize_others=False
-        )
+        if exists(train_corpus_name + '.normalized.pkl'):
+            with open(train_corpus_name + '.normalized.pkl', 'rb') as f:
+                train_corpus_data = pickle.load(f)
+        else:
+            train_corpus_data = clean_corpus(train_data_path, strict=True)
+            train_corpus_data = normalize_corpus_data(
+                train_corpus_data, normalize_char=True,
+                normalize_digits=True, normalize_punctuation=False, normalize_others=False
+            )
+            with open(train_corpus_name + '.normalized.pkl', 'wb') as f:
+                pickle.dump(train_corpus_data, f)
 
         tokenized_train_corpus_data = []
         for i, sentence in enumerate(train_corpus_data):
             print('Tokenizing training data %.2f%%' % ((i+1)/len(train_corpus_data)*100), end='\r')
-            tokenized_train_corpus_data.append(filter_name_place_tokenizer(sentence))
+            tokenized_train_corpus_data.append(cut_char_tokenizer(sentence))
 
         with open(tokenized_train_corpus_name, 'wb') as f:
             pickle.dump(tokenized_train_corpus_data, f)
 
     # create input and targrt data
     data1, data2, target = create_input_target_data(
-        tokenized_train_corpus_data, vocab, k, max_unk_percent_in_sentence, unk_percent)
+        tokenized_train_corpus_data, vocab, k, max_unk_percent_in_sentence, unk_percent=unk_percent)
 
     # save corpus
     with open(join(data_dir, 'data1.'+str(len(data1))), 'w') as f:
@@ -186,5 +193,6 @@ if __name__ == '__main__':
     train_data_path = sys.argv[2]
     max_vocabulary_size = int(sys.argv[3])
     max_unk_percent_in_sentence = float(sys.argv[4])
-    generate_data(vocab_data_path, train_data_path, max_vocabulary_size, max_unk_percent_in_sentence)
+    unk_percent = float(sys.argv[5])
+    generate_data(vocab_data_path, train_data_path, max_vocabulary_size, max_unk_percent_in_sentence, unk_percent)
 

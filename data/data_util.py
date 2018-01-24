@@ -25,19 +25,15 @@ PAD = 'PAD'
 PAD_INDEX = 1
 pre_vocab = [UNK, PAD]
 
-SEG_MODEL_PATH = './ltp_data_v3.4.0/cws.model'
-TAG_MODEL_PATH = './ltp_data_v3.4.0/pos.model'
-
-from pyltp import Segmentor, Postagger
-segmentor = Segmentor()
-segmentor.load(SEG_MODEL_PATH)
-postagger = Postagger()
-postagger.load(TAG_MODEL_PATH)
-
+pyltp_init = False
 name_tag = 'nh'
 place_tag = 'ns'
 name_replace_ch = 'N'
 place_replace_ch = 'P'
+SEG_MODEL_PATH = './ltp_data_v3.4.0/cws.model'
+TAG_MODEL_PATH = './ltp_data_v3.4.0/pos.model'
+segmentor = None
+postagger = None
 
 
 def _is_chinese(c):
@@ -165,6 +161,16 @@ def cut_char_tokenizer(sentence):
     return [one for one in sentence]
 
 def filter_name_place_tokenizer(sentence):
+
+    global pyltp_init, segmentor, postagger
+
+    if not pyltp_init:
+        from pyltp import Segmentor, Postagger
+        segmentor = Segmentor()
+        segmentor.load(SEG_MODEL_PATH)
+        postagger = Postagger()
+        postagger.load(TAG_MODEL_PATH)
+        pyltp_init = True
 
     words = list(jieba.cut(sentence))
     tags = list(postagger.postag(words))
