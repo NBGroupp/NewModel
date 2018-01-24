@@ -31,3 +31,5 @@ K = -1
 MAX_UNK_PERCENT_IN_SENTENCE = 0
 # 带UNK数据在总数据中的比例
 UNK_PERCENT_IN_TOTAL_DATA = 0
+# 是否将运行数据写入文件
+OPERATE_IN_FILE = True
