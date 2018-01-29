@@ -13,6 +13,7 @@ from langconv import *
 
 
 puncs = "＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､\u3000、〃〈〉《》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏﹑﹔·！？｡。!\"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~"
+end_puncs = "～〜…！？｡。!.~"
 
 _PUNC_RE = re.compile('[' + puncs + ']')
 _DIGIT_RE = re.compile('[\d１２３４５６７８９０]+\.?[\d１２３４５６７８９０]*%?')
@@ -97,6 +98,9 @@ def clean_corpus(data_path, replace=False, strict=False):
         if strict:
             if others_re.search(sentence):
                 #print('Dropping sentence: '+sentence, end='\r')
+                drop += 1
+                continue
+            if sentence[-1] not in end_puncs:
                 drop += 1
                 continue
         sentence = Converter('zh-hans').convert(sentence)
