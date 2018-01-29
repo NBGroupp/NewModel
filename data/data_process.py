@@ -18,9 +18,6 @@ def create_input_target_data(data_dir, tokenized_data, vocab, k,
                              max_unk_percent_in_sentence, vectorize=True,
                              unk_percent=1, operate_in_file=False):
 
-    if operate_in_file and (unk_percent > 0):
-        print('error: operate in file does not support mixing unk')
-        exit(1)
     if k == -1 and not vectorize:
         print('error: not implement unfixed with not vectorize')
         exit(1)
@@ -35,64 +32,67 @@ def create_input_target_data(data_dir, tokenized_data, vocab, k,
     data2 = []
     target = []
     data_sum = 0
-    unk_data1 = []
-    unk_data2 = []
-    unk_target = []
+    data_unk_sum = 0
 
     for i, one in enumerate(tokenized_data):
 
         print('Creating input and target data... %.2f%%'
               % ((i+1)/len(tokenized_data)*100), end='\r')
 
-        unk_num_in_sentence = sum([1 for token in one if not vocab.get(token)])
+        unk_num_in_sentence = sum([1 for token in one if vocab.get(token, -1) == -1])
         unk_in_sentence = 1 if unk_num_in_sentence > 0 else 0
         if unk_num_in_sentence / len(one) > max_unk_percent_in_sentence:
             continue
         #if unk_in_sentence:  # NOTICE: drop all unks
         #    continue
 
+        if data_sum \
+           and unk_num_in_sentence and data_unk_sum / data_sum > unk_percent:
+            continue
+
         if k == -1:  # not implement whether vectorize
             for i, ch in enumerate(one):
-                if ch in puncs or ch == '0' or ch == 'a' or not vocab.get(ch) or ch=='N' or ch =='P':
+                if ch in puncs \
+                   or ch == '0' \
+                   or ch == 'a' \
+                   or vocab.get(ch, -1) == -1 \
+                   or ch=='N' or ch =='P':
                     continue
                 pres = []
                 lats = []
                 if i == 0:
-                    pres.append(str(vocab.get(PAD)))
+                    pres.append(str(vocab.get(START)))
                 else:
                     pres = [str(vocab.get(pre_c, UNK_INDEX)) for pre_c in one[:i]]
 
                 if i == len(one)-1:
-                    lats.append(str(vocab.get(PAD)))
+                    lats.append(str(vocab.get(END)))
                 else:
                     lats = [str(vocab.get(lat_c, UNK_INDEX)) for lat_c in one[i+1:]]
                 lats.reverse()
 
-                if not unk_in_sentence:
-                    data1.append(pres)
-                    data2.append(lats)
-                    target.append(str(vocab.get(ch)))
-                    if operate_in_file and len(data1) % 1000000 == 0:
-                        data_sum += 1000000
-                        with open(join(data_dir, 'data1'), 'a') as f:
-                            for d in data1:
-                                f.write(' '.join(d) + '\n')
-                        with open(join(data_dir, 'data2'), 'a') as f:
-                            for d in data2:
-                                f.write(' '.join(d) + '\n')
-                        with open(join(data_dir, 'target'), 'a') as f:
-                            for t in target:
-                                f.write(t + '\n')
-                        del data1
-                        del data2
-                        del target
-                        data1 = []
-                        data2 = []
-                        target = []
-                elif not operate_in_file:
-                    unk_data1.append(pres)
-                    unk_data2.append(lats)
-                    unk_target.append(str(vocab.get(ch)))
+                data1.append(pres)
+                data2.append(lats)
+                target.append(str(vocab.get(ch)))
+                data_sum += 1
+                if unk_in_sentence:
+                    data_unk_sum += 1
+                if operate_in_file and len(data1) % 1000000 == 0:
+                    with open(join(data_dir, 'data1'), 'a') as f:
+                        for d in data1:
+                            f.write(' '.join(d) + '\n')
+                    with open(join(data_dir, 'data2'), 'a') as f:
+                        for d in data2:
+                            f.write(' '.join(d) + '\n')
+                    with open(join(data_dir, 'target'), 'a') as f:
+                        for t in target:
+                            f.write(t + '\n')
+                    del data1
+                    del data2
+                    del target
+                    data1 = []
+                    data2 = []
+                    target = []
                 del pres
                 del lats
 
@@ -115,7 +115,6 @@ def create_input_target_data(data_dir, tokenized_data, vocab, k,
                 target.append(str(vocab.get(ch)))
 
     if operate_in_file and len(data1) > 0:
-        data_sum += len(data1)
         with open(join(data_dir, 'data1'), 'a') as f:
             for d in data1:
                 f.write(' '.join(d) + '\n')
@@ -129,23 +128,9 @@ def create_input_target_data(data_dir, tokenized_data, vocab, k,
         rename(join(data_dir, 'data2'), join(data_dir, 'data2.'+str(data_sum)))
         rename(join(data_dir, 'target'), join(data_dir, 'target.'+str(data_sum)))
 
-    if k == -1 and not operate_in_file:  # mixing unk
-        print('Mixing unks...', end='\r')
-        unk_num = int(len(data1) * unk_percent)
-        if unk_num > len(unk_data1):  # lack unk datas
-            unk_indices = list(range(len(unk_data1)))
-        else:
-            unk_indices = random.sample(range(len(unk_data1)), unk_num)
-        print('no unk data: {}, to mix unk data: {}'.format(len(data1), len(unk_indices)))
-        for index in unk_indices:
-            insert_index = random.randrange(0, len(data1))
-            data1.insert(insert_index, unk_data1[index])
-            data2.insert(insert_index, unk_data2[index])
-            target.insert(insert_index, unk_target[index])
-        print('Mixing {} unks into {} data'.format(len(unk_indices), len(data1)))
 
     if operate_in_file:
-        return data_sum
+        return data_sum, data_unk_sum
     else:
         return data1, data2, target
 
@@ -186,7 +171,11 @@ def generate_data(data_dir):
 
     # create vocabulary
     processed_vocab_name = vocab_corpus_name + '.vocab.' + str(VOCAB_SIZE)
-    if exists(processed_vocab_name):
+    if VOCAB_FILE:
+        print('Loading vocab file from {}...'.format(VOCAB_FILE))
+        with open(VOCAB_FILE, 'r') as f:
+            vocab = f.read().split('\n')
+    elif exists(processed_vocab_name):
         print('Loading vocab from {}...'.format(processed_vocab_name))
         with open(processed_vocab_name, 'r') as f:
             vocab = f.read().split('\n')
@@ -226,11 +215,12 @@ def generate_data(data_dir):
 
     # create input and targrt data
     if OPERATE_IN_FILE:
-        data_sum = create_input_target_data(
+        data_sum, data_unk_sum = create_input_target_data(
             data_dir, tokenized_train_corpus_data, vocab, K,
             MAX_UNK_PERCENT_IN_SENTENCE, unk_percent=UNK_PERCENT_IN_TOTAL_DATA,
             operate_in_file=OPERATE_IN_FILE)
-        print('Data Sum: {}'.format(data_sum))
+        print('Total data: {}, unk data: {}, unk percent: {:.2f}%%'.\
+              format(data_unk_sum, data_sum, data_unk_sum / data_sum * 100))
     else:
         data1, data2, target = create_input_target_data(
             data_dir, tokenized_train_corpus_data, vocab, K,

@@ -20,6 +20,8 @@ TRAIN_DATA_PATH = './corpuses/aihanyu.gz'
 VOCAB_SIZE = 5000
 # 建立字典时处理语料方式，见上面的Tokenizer
 VOCAB_TOKENIZER = cut_char_tokenizer
+# 使用外来字典文件，不受上方字典最大长度限制
+VOCAB_FILE = None
 
 #---BUILD TRAIN DATA OPTION---#
 

@@ -24,7 +24,11 @@ UNK = 'UNK'
 UNK_INDEX = 0
 PAD = 'PAD'
 PAD_INDEX = 1
-pre_vocab = [UNK, PAD]
+START = 'START'
+START_INDEX = 2
+END = 'END'
+END_INDEX = 3
+pre_vocab = [UNK, PAD, START, END]
 
 pyltp_init = False
 name_tag = 'nh'
