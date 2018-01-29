@@ -155,34 +155,35 @@ def generate_data(data_dir):
     print('data will be saved in {}'.format(data_dir))
 
     # preprocess vocab data
-    normalized_vocab_corpus_name = vocab_corpus_name +'.normalized.pkl'
-    if exists(normalized_vocab_corpus_name):
-        print('Loading preprocessed corpus data from {}...'.format(normalized_vocab_corpus_name))
-        with open(normalized_vocab_corpus_name, 'rb') as f:
-            vocab_corpus_data = pickle.load(f)
-    else:
-        vocab_corpus_data = clean_corpus(VOCAB_DATA_PATH, strict=True)
-        vocab_corpus_data = normalize_corpus_data(
-            vocab_corpus_data, normalize_char=True,
-            normalize_digits=True, normalize_punctuation=False, normalize_others=False
-        )
-        with open(normalized_vocab_corpus_name, 'wb') as f:
-            pickle.dump(vocab_corpus_data, f)
-
-    # create vocabulary
-    processed_vocab_name = vocab_corpus_name + '.vocab.' + str(VOCAB_SIZE)
     if VOCAB_FILE:
         print('Loading vocab file from {}...'.format(VOCAB_FILE))
         with open(VOCAB_FILE, 'r') as f:
             vocab = f.read().split('\n')
-    elif exists(processed_vocab_name):
-        print('Loading vocab from {}...'.format(processed_vocab_name))
-        with open(processed_vocab_name, 'r') as f:
-            vocab = f.read().split('\n')
     else:
-        vocab, _, _= create_vocabulary(vocab_corpus_data, VOCAB_SIZE, tokenizer=VOCAB_TOKENIZER)
-        with open(processed_vocab_name, 'w') as f:
-            f.write('\n'.join(vocab))
+        normalized_vocab_corpus_name = vocab_corpus_name +'.normalized.pkl'
+        if exists(normalized_vocab_corpus_name):
+            print('Loading preprocessed corpus data from {}...'.format(normalized_vocab_corpus_name))
+            with open(normalized_vocab_corpus_name, 'rb') as f:
+                vocab_corpus_data = pickle.load(f)
+        else:
+            vocab_corpus_data = clean_corpus(VOCAB_DATA_PATH, strict=True)
+            vocab_corpus_data = normalize_corpus_data(
+                vocab_corpus_data, normalize_char=True,
+                normalize_digits=True, normalize_punctuation=False, normalize_others=False
+            )
+            with open(normalized_vocab_corpus_name, 'wb') as f:
+                pickle.dump(vocab_corpus_data, f)
+
+        # create vocabulary
+        processed_vocab_name = vocab_corpus_name + '.vocab.' + str(VOCAB_SIZE)
+        if exists(processed_vocab_name):
+            print('Loading vocab from {}...'.format(processed_vocab_name))
+            with open(processed_vocab_name, 'r') as f:
+                vocab = f.read().split('\n')
+        else:
+            vocab, _, _= create_vocabulary(vocab_corpus_data, VOCAB_SIZE, tokenizer=VOCAB_TOKENIZER)
+            with open(processed_vocab_name, 'w') as f:
+                f.write('\n'.join(vocab))
     # change to map
     vocab = {key: vocab.index(key) for key in vocab}
 
