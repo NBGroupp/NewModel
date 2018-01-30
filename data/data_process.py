@@ -6,6 +6,7 @@ import time
 from os import rename
 from os.path import splitext
 from os.path import basename
+from os.path import dirname
 from os.path import exists
 from os.path import join
 from sys import exit
@@ -123,7 +124,9 @@ def generate_data(data_dir):
     normalize_punctuation = False
 
     vocab_corpus_name = splitext(basename(VOCAB_DATA_PATH))[0]
+    vocab_corpus_path = dirname(VOCAB_DATA_PATH)
     train_corpus_name = splitext(basename(TRAIN_DATA_PATH))[0]
+    train_corpus_path = dirname(TRAIN_DATA_PATH)
 
     # log info
     with open(join(data_dir, 'log'), 'w') as f:
@@ -144,6 +147,7 @@ def generate_data(data_dir):
             vocab = f.read().split('\n')
     else:
         normalized_vocab_corpus_name = vocab_corpus_name +'.normalized.pkl'
+        normalized_vocab_corpus_name = join(vocab_corpus_path, normalized_vocab_corpus_name)
         if exists(normalized_vocab_corpus_name):
             print('Loading preprocessed corpus data from {}...'.format(normalized_vocab_corpus_name))
             with open(normalized_vocab_corpus_name, 'rb') as f:
@@ -159,6 +163,7 @@ def generate_data(data_dir):
 
         # create vocabulary
         processed_vocab_name = vocab_corpus_name + '.vocab.' + str(VOCAB_SIZE)
+        processed_vocab_name = join(vocab_corpus_path, processed_vocab_name)
         if exists(processed_vocab_name):
             print('Loading vocab from {}...'.format(processed_vocab_name))
             with open(processed_vocab_name, 'r') as f:
@@ -167,11 +172,16 @@ def generate_data(data_dir):
             vocab, _, _= create_vocabulary(vocab_corpus_data, VOCAB_SIZE, tokenizer=VOCAB_TOKENIZER)
             with open(processed_vocab_name, 'w') as f:
                 f.write('\n'.join(vocab))
+        # save vocab
+        with open(join(data_dir, 'vocab.'+str(len(vocab))), 'w') as f:
+            f.write('\n'.join(vocab))
+
     # change to map
     vocab = {key: vocab.index(key) for key in vocab}
 
     # tokenized train data
     tokenized_train_corpus_name = train_corpus_name + '.tokenized.pkl'
+    tokenized_train_corpus_name = join(train_corpus_path, tokenized_train_corpus_name)
     if exists(tokenized_train_corpus_name):
         print('Loading tokenized corpus data from {}...'.format(tokenized_train_corpus_name))
         with open(tokenized_train_corpus_name, 'rb') as f:
