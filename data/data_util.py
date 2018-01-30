@@ -24,11 +24,7 @@ UNK = 'UNK'
 UNK_INDEX = 0
 PAD = 'PAD'
 PAD_INDEX = 1
-START = 'START'
-START_INDEX = 2
-END = 'END'
-END_INDEX = 3
-pre_vocab = [UNK, PAD, START, END]
+pre_vocab = [UNK, PAD]
 
 pyltp_init = False
 name_tag = 'nh'
@@ -59,64 +55,81 @@ def strQ2B(ustring):
     return ''.join(ss)
 
 
-def clean_corpus(data_path, replace=False, strict=False):
+def clean_corpus(data_path, replace=False, strict=False, big_file=False):
     """ Clean corpus data to delete empty lines
         or line has too few Chinese characters(<=3).
         If the corpus is unclean and argument 'replace' is true,
         replace origin corpus_data with new data.
         Args:
-            data path: origin corpus file path
+            data path: origin corpus file path, text file
             replace: whether replace origin corpus_data with clean data
         Returns:
             new_corpus_data: clean corpus data in list format.
     """
     print('Checking origin data...')
-    f = gzip.GzipFile(data_path, mode='r')
-    corpus_data = f.read().decode().split('\n')
-    f.close()
+    #f = gzip.GzipFile(data_path, mode='r')
+    #corpus_data = f.read().decode().split('\n')
+    #f.close()
+    new_file_name = os.path.splitext(os.path.basename(data_path))
+    new_file_name = new_file_name[0]+'_clean'
+    new_file_dir = os.path.dirname(data_path)
+    new_file = os.path.join(new_file_dir, new_file_name)
     new_corpus_data = set()
     drop = 0
     others_re = re.compile('[^' + puncs + '\u4e00-\u9fff0-9]')
-    total = len(corpus_data)
-    for i, sentence in enumerate(corpus_data):
-        print('Checking original data %.2f %%' % ((i+1)/total*100), end='\r')
-        if len(sentence) == 0:
-            # empty line
-            continue
-        sentence = strQ2B(sentence).replace('\r', '')
-        have_ch_character = sum([1 for c in sentence if _is_chinese(c)])
-        others = len(sentence) - have_ch_character
-        if have_ch_character <= 3 or others >= have_ch_character:
-            # too few chinese characters
-            # print('Dropping sentence: '+sentence, end='\r')
-            drop += 1
-            continue
-        # check first character is not chinese
-        # check ' pair
-        # check " pair
-        if not _is_chinese(sentence[0]) \
-           or (sum([1 for ch in sentence if ch == '"']) % 2 != 0) \
-           or (sum([1 for ch in sentence if ch == '\'']) % 2 != 0) :
-            #print('Dropping sentence: '+sentence, end='\r')
-            drop += 1
-        if strict:
-            if others_re.search(sentence):
+    total = 0
+    with open(data_path, 'r') as f:
+        for sentence in f:
+            total += 1
+            sentence = sentence.strip()
+            print(str(total)+' '+str(len(new_corpus_data)), end='\r')
+            if len(sentence) == 0:
+                # empty line
+                continue
+            sentence = strQ2B(sentence).replace('\r', '')
+            have_ch_character = sum([1 for c in sentence if _is_chinese(c)])
+            others = len(sentence) - have_ch_character
+            if have_ch_character <= 3 or others >= have_ch_character:
+                # too few chinese characters
+                # print('Dropping sentence: '+sentence, end='\r')
+                drop += 1
+                continue
+            # check first character is not chinese
+            # check ' pair
+            # check " pair
+            if not _is_chinese(sentence[0]) \
+               or (sum([1 for ch in sentence if ch == '"']) % 2 != 0) \
+               or (sum([1 for ch in sentence if ch == '\'']) % 2 != 0) :
                 #print('Dropping sentence: '+sentence, end='\r')
                 drop += 1
-                continue
-            if sentence[-1] not in end_puncs:
-                drop += 1
-                continue
-        sentence = Converter('zh-hans').convert(sentence)
-        new_corpus_data.add(sentence.replace(' ', ''))
-    if len(new_corpus_data) != len(corpus_data):
-        if replace:
+            if strict:
+                if others_re.search(sentence):
+                    #print('Dropping sentence: '+sentence, end='\r')
+                    drop += 1
+                    continue
+                if sentence[-1] not in end_puncs:
+                    drop += 1
+                    continue
+                if not _is_chinese(sentence[0]):
+                    drop += 1
+                    continue
+            sentence = Converter('zh-hans').convert(sentence)
+            new_corpus_data.add(sentence.replace(' ', ''))
+            if big_file and len(new_corpus_data) == 100000:
+                print(new_file_name)
+                with open(new_file, 'a') as ff:
+                    for one in new_corpus_data:
+                        ff.write(one + '\n')
+                del new_corpus_data
+                new_corpus_data = set()
+    with open(new_file, 'a') as f:
+        for one in new_corpus_data:
+            f.write(one + '\n')
+    if len(new_corpus_data) != total:
+        if not big_file and replace:
             # unclean, recreat corpus data
             data = '\n'.join(new_corpus_data)
-            data = gzip.compress(data.encode())
-            new_file_name = os.path.splitext(os.path.basename(data_path))
-            new_file_name = new_file_name[0]+'_new'+new_file_name[1]
-            with open(new_file_name, 'wb') as f:
+            with open(new_file, 'w') as f:
                 f.write(data)
         info = '\nClean origin corpus: {}, drop sentence: {}, left sentence: {}'.\
             format(data_path, drop, len(new_corpus_data))
@@ -124,9 +137,9 @@ def clean_corpus(data_path, replace=False, strict=False):
     else:
         info = '\nOrigin corpus is clean: {}'.format(len(new_corpus_data))
         print(info)
-    #with open('./log', 'a') as log:
-    #    log.write('\n')
-    #    log.write(info)
+    if big_file:
+        with open(new_file, 'r') as f:
+            new_corpus_data = f.read().strip().split('\n')
     return list(new_corpus_data)
 
 

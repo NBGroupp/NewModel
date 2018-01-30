@@ -15,15 +15,8 @@ from config import *
 
 
 def create_input_target_data(data_dir, tokenized_data, vocab, k,
-                             max_unk_percent_in_sentence, vectorize=True,
+                             max_unk_percent_in_sentence,
                              unk_percent=1, operate_in_file=False):
-
-    if k == -1 and not vectorize:
-        print('error: not implement unfixed with not vectorize')
-        exit(1)
-    if k >= 0 and (operate_in_file or unk_percent > 0):
-        print('error: not implement fixed with operate_in_file or mixing unk')
-        exit(1)
 
     paddings = [PAD for i in range(k)]
     total_unk = len(tokenized_data) * unk_percent
@@ -50,69 +43,59 @@ def create_input_target_data(data_dir, tokenized_data, vocab, k,
            and unk_num_in_sentence and data_unk_sum / data_sum > unk_percent:
             continue
 
-        if k == -1:  # not implement whether vectorize
-            for i, ch in enumerate(one):
-                if ch in puncs \
-                   or ch == '0' \
-                   or ch == 'a' \
-                   or vocab.get(ch, -1) == -1 \
-                   or ch=='N' or ch =='P':
-                    continue
-                pres = []
-                lats = []
+        for i, ch in enumerate(one):
+            if ch in puncs \
+               or ch == '0' \
+               or ch == 'a' \
+               or vocab.get(ch, -1) == -1 \
+               or ch=='N' or ch =='P':
+                continue
+            pres = []
+            lats = []
+
+            if k == -1:
+                # unfixed
                 if i == 0:
-                    pres.append(str(vocab.get(START)))
+                    pres.append(str(vocab.get(PAD)))
                 else:
                     pres = [str(vocab.get(pre_c, UNK_INDEX)) for pre_c in one[:i]]
 
                 if i == len(one)-1:
-                    lats.append(str(vocab.get(END)))
+                    lats.append(str(vocab.get(PAD)))
                 else:
                     lats = [str(vocab.get(lat_c, UNK_INDEX)) for lat_c in one[i+1:]]
-                lats.reverse()
+            else:
+                # fixed
+                tokens = paddings + one + paddings
+                pres = [str(vocab.get(pre_c, UNK_INDEX)) for pre_c in tokens[i:i+k]]
+                lats = [str(vocab.get(lat_c, UNK_INDEX)) for lat_c in tokens[i+k+1:i+k+1+k]]
 
-                data1.append(pres)
-                data2.append(lats)
-                target.append(str(vocab.get(ch)))
-                data_sum += 1
-                if unk_in_sentence:
-                    data_unk_sum += 1
-                if operate_in_file and len(data1) % 1000000 == 0:
-                    with open(join(data_dir, 'data1'), 'a') as f:
-                        for d in data1:
-                            f.write(' '.join(d) + '\n')
-                    with open(join(data_dir, 'data2'), 'a') as f:
-                        for d in data2:
-                            f.write(' '.join(d) + '\n')
-                    with open(join(data_dir, 'target'), 'a') as f:
-                        for t in target:
-                            f.write(t + '\n')
-                    del data1
-                    del data2
-                    del target
-                    data1 = []
-                    data2 = []
-                    target = []
-                del pres
-                del lats
+            lats.reverse()
 
-        else:  # not implement mixing unk, operate in file
-            tokens = paddings + one + paddings
-            for i, ch in enumerate(one):
-                if ch in puncs or ch == '0' or ch == 'a' or not vocab.get(ch) or ch=='N' or ch=='P':
-                    continue
-                if vectorize:
-                    pres = []
-                    lats = []
-                    pres = [str(vocab.get(pre_c, UNK_INDEX)) for pre_c in tokens[i:i+k]]
-                    lats = [str(vocab.get(lat_c, UNK_INDEX)) for lat_c in tokens[i+k+1:i+k+1+k]]
-                    lats.reverse()
-                    data1.append(pres)
-                    data2.append(lats)
-                else:
-                    data1.append(tokens[i:i+k])
-                    data2.append(tokens[i+k+1:i+k+1+k])
-                target.append(str(vocab.get(ch)))
+            data1.append(pres)
+            data2.append(lats)
+            target.append(str(vocab.get(ch)))
+            data_sum += 1
+            if unk_in_sentence:
+                data_unk_sum += 1
+            if operate_in_file and len(data1) % 1000000 == 0:
+                with open(join(data_dir, 'data1'), 'a') as f:
+                    for d in data1:
+                        f.write(' '.join(d) + '\n')
+                with open(join(data_dir, 'data2'), 'a') as f:
+                    for d in data2:
+                        f.write(' '.join(d) + '\n')
+                with open(join(data_dir, 'target'), 'a') as f:
+                    for t in target:
+                        f.write(t + '\n')
+                del data1
+                del data2
+                del target
+                data1 = []
+                data2 = []
+                target = []
+            del pres
+            del lats
 
     if operate_in_file and len(data1) > 0:
         with open(join(data_dir, 'data1'), 'a') as f:
@@ -221,7 +204,7 @@ def generate_data(data_dir):
             MAX_UNK_PERCENT_IN_SENTENCE, unk_percent=UNK_PERCENT_IN_TOTAL_DATA,
             operate_in_file=OPERATE_IN_FILE)
         print('Total data: {}, unk data: {}, unk percent: {:.2f}%%'.\
-              format(data_unk_sum, data_sum, data_unk_sum / data_sum * 100))
+              format(data_sum, data_unk__sum, data_unk_sum / data_sum * 100))
     else:
         data1, data2, target = create_input_target_data(
             data_dir, tokenized_train_corpus_data, vocab, K,
