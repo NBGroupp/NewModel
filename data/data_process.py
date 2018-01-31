@@ -15,27 +15,40 @@ from data_util import *
 from config import *
 
 
-def create_input_target_data(data_dir, tokenized_data, vocab, k,
-                             max_unk_percent_in_sentence,
+def create_input_target_data(data_dir, train_corpus_data, tokenizer, near_words_dict,
+                             vocab, k, max_unk_percent_in_sentence,
                              unk_percent=1, operate_in_file=False):
 
+    if k >= 0:
+        print('not implement fixed method')
+        exit(1)
+    if not operate_in_file:
+        print('must select operate in file')
+        exit(1)
+
     paddings = [PAD for i in range(k)]
-    total_unk = len(tokenized_data) * unk_percent
 
     data1 = []
     data2 = []
     target = []
+    data_nears = []
     data_sum = 0
     data_unk_sum = 0
 
-    for i, one in enumerate(tokenized_data):
+    for i, sentence in enumerate(train_corpus_data):
 
-        print('Creating input and target data... %.2f%%'
-              % ((i+1)/len(tokenized_data)*100), end='\r')
+        print('Creating input and target data... %.2f%%, current: %d data from %d sentences'
+              % ((i+1)/len(train_corpus_data)*100, data_sum, i+1), end='\r')
+
+        # tokenize
+        one = tokenizer(sentence)
 
         unk_num_in_sentence = sum([1 for token in one if vocab.get(token, -1) == -1])
         unk_in_sentence = 1 if unk_num_in_sentence > 0 else 0
         if unk_num_in_sentence / len(one) > max_unk_percent_in_sentence:
+            continue
+        near_words_sum = sum([1 for token in one if near_words_dict.get(token, -1) == -1])
+        if near_words_sum == 0:
             continue
         #if unk_in_sentence:  # NOTICE: drop all unks
         #    continue
@@ -51,20 +64,16 @@ def create_input_target_data(data_dir, tokenized_data, vocab, k,
                or vocab.get(ch, -1) == -1 \
                or ch=='N' or ch =='P':
                 continue
+            if near_words_dict.get(ch, -1) == -1:
+                continue
             pres = []
             lats = []
+            ch_near_words = [str(vocab[_]) for _ in near_words_dict[ch]]
 
             if k == -1:
                 # unfixed
-                if i == 0:
-                    pres.append(str(vocab.get(PAD)))
-                else:
-                    pres = [str(vocab.get(pre_c, UNK_INDEX)) for pre_c in one[:i]]
-
-                if i == len(one)-1:
-                    lats.append(str(vocab.get(PAD)))
-                else:
-                    lats = [str(vocab.get(lat_c, UNK_INDEX)) for lat_c in one[i+1:]]
+                pres = [str(vocab['START'])] + [str(vocab.get(pre_c, UNK_INDEX)) for pre_c in one[:i]]
+                lats = [str(vocab.get(lat_c, UNK_INDEX)) for lat_c in one[i+1:]] + [str(vocab['END'])]
             else:
                 # fixed
                 tokens = paddings + one + paddings
@@ -76,10 +85,11 @@ def create_input_target_data(data_dir, tokenized_data, vocab, k,
             data1.append(pres)
             data2.append(lats)
             target.append(str(vocab.get(ch)))
+            data_nears.append(ch_near_words)
             data_sum += 1
             if unk_in_sentence:
                 data_unk_sum += 1
-            if operate_in_file and len(data1) % 1000000 == 0:
+            if operate_in_file and len(data1) % 100000 == 0:
                 with open(join(data_dir, 'data1'), 'a') as f:
                     for d in data1:
                         f.write(' '.join(d) + '\n')
@@ -89,12 +99,17 @@ def create_input_target_data(data_dir, tokenized_data, vocab, k,
                 with open(join(data_dir, 'target'), 'a') as f:
                     for t in target:
                         f.write(t + '\n')
+                with open(join(data_dir, 'nears'), 'a') as f:
+                    for n in data_nears:
+                        f.write(' '.join(n) + '\n')
                 del data1
                 del data2
                 del target
+                del data_nears
                 data1 = []
                 data2 = []
                 target = []
+                data_nears = []
             del pres
             del lats
 
@@ -108,9 +123,13 @@ def create_input_target_data(data_dir, tokenized_data, vocab, k,
         with open(join(data_dir, 'target'), 'a') as f:
             for t in target:
                 f.write(t + '\n')
+        with open(join(data_dir, 'nears'), 'a') as f:
+            for n in data_nears:
+                f.write(' '.join(n) + '\n')
         rename(join(data_dir, 'data1'), join(data_dir, 'data1.'+str(data_sum)))
         rename(join(data_dir, 'data2'), join(data_dir, 'data2.'+str(data_sum)))
         rename(join(data_dir, 'target'), join(data_dir, 'target.'+str(data_sum)))
+        rename(join(data_dir, 'nears'), join(data_dir, 'nears.'+str(data_sum)))
 
 
     if operate_in_file:
@@ -172,52 +191,60 @@ def generate_data(data_dir):
             vocab, _, _= create_vocabulary(vocab_corpus_data, VOCAB_SIZE, tokenizer=VOCAB_TOKENIZER)
             with open(processed_vocab_name, 'w') as f:
                 f.write('\n'.join(vocab))
-        # save vocab
-        with open(join(data_dir, 'vocab.'+str(len(vocab))), 'w') as f:
-            f.write('\n'.join(vocab))
+    # save vocab
+    with open(join(data_dir, 'vocab.'+str(len(vocab))), 'w') as f:
+        f.write('\n'.join(vocab))
 
     # change to map
     vocab = {key: vocab.index(key) for key in vocab}
 
-    # tokenized train data
-    tokenized_train_corpus_name = train_corpus_name + '.tokenized.pkl'
-    tokenized_train_corpus_name = join(train_corpus_path, tokenized_train_corpus_name)
-    if exists(tokenized_train_corpus_name):
-        print('Loading tokenized corpus data from {}...'.format(tokenized_train_corpus_name))
-        with open(tokenized_train_corpus_name, 'rb') as f:
-            tokenized_train_corpus_data = pickle.load(f)
+    # build near words dict
+    print('Creating near words dict...', end='\r')
+    with open(NEAR_WORDS_DATA_PATH, 'r') as f:
+        near_words_data = f.read().strip().split('\n')
+    near_words_dict = {}
+    drop = 0
+    for words in near_words_data:
+        chs = words.strip().split()
+        chs = [_ for _ in chs if vocab.get(_)]
+        if len(chs) <= 1:
+            drop += 1
+            continue
+        #if sum([1 for ch in chs if vocab.get(chs, -1) == -1]) > 0:
+        #    # 含有UNK，跳过该组
+        #    drop += 1
+        #    continue
+        for ch in chs:
+            near_words_dict[ch] = chs.copy()
+    print('Creating near words dict... done. drop %d/%d groups near words, %d keys'
+          % (drop, len(near_words_data), len(near_words_dict.keys())))
+
+    # process train data
+    normalized_train_corpus_name = train_corpus_name +'.normalized.pkl'
+    normalized_train_corpus_name = join(train_corpus_path, normalized_train_corpus_name)
+    if exists(normalized_train_corpus_name):
+        with open(normalized_train_corpus_name, 'rb') as f:
+            train_corpus_data = pickle.load(f)
     else:
-        if exists(train_corpus_name + '.normalized.pkl'):
-            with open(train_corpus_name + '.normalized.pkl', 'rb') as f:
-                train_corpus_data = pickle.load(f)
-        else:
-            train_corpus_data = clean_corpus(TRAIN_DATA_PATH, strict=True)
-            train_corpus_data = normalize_corpus_data(
-                train_corpus_data, normalize_char=True,
-                normalize_digits=True, normalize_punctuation=False, normalize_others=False
-            )
-            with open(train_corpus_name + '.normalized.pkl', 'wb') as f:
-                pickle.dump(train_corpus_data, f)
-
-        tokenized_train_corpus_data = []
-        for i, sentence in enumerate(train_corpus_data):
-            print('Tokenizing training data %.2f%%' % ((i+1)/len(train_corpus_data)*100), end='\r')
-            tokenized_train_corpus_data.append(TRAIN_DATA_TOKENIZER(sentence))
-
-        with open(tokenized_train_corpus_name, 'wb') as f:
-            pickle.dump(tokenized_train_corpus_data, f)
+        train_corpus_data = clean_corpus(TRAIN_DATA_PATH, strict=True)
+        train_corpus_data = normalize_corpus_data(
+            train_corpus_data, normalize_char=True,
+            normalize_digits=True, normalize_punctuation=False, normalize_others=False
+        )
+        with open(normalized_train_corpus_name, 'wb') as f:
+            pickle.dump(train_corpus_data, f)
 
     # create input and targrt data
     if OPERATE_IN_FILE:
         data_sum, data_unk_sum = create_input_target_data(
-            data_dir, tokenized_train_corpus_data, vocab, K,
+            data_dir, train_corpus_data, TRAIN_DATA_TOKENIZER, near_words_dict, vocab, K,
             MAX_UNK_PERCENT_IN_SENTENCE, unk_percent=UNK_PERCENT_IN_TOTAL_DATA,
             operate_in_file=OPERATE_IN_FILE)
-        print('Total data: {}, unk data: {}, unk percent: {:.2f}%%'.\
-              format(data_sum, data_unk__sum, data_unk_sum / data_sum * 100))
+        print('\nTotal data: {}, unk data: {}, unk percent: {:.2f}%%'.\
+              format(data_sum, data_unk_sum, data_unk_sum / (data_sum+1) * 100))
     else:
         data1, data2, target = create_input_target_data(
-            data_dir, tokenized_train_corpus_data, vocab, K,
+            data_dir, train_corpus_data, TRAIN_DATA_TOKENIZER, near_words_dict, vocab, K,
             MAX_UNK_PERCENT_IN_SENTENCE, unk_percent=UNK_PERCENT_IN_TOTAL_DATA)
 
         # save corpus

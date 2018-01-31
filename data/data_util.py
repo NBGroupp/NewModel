@@ -22,19 +22,19 @@ _OTHERS_RE = re.compile('[^\.a0\u4e00-\u9fff]')
 
 UNK = 'UNK'
 UNK_INDEX = 0
-PAD = 'PAD'
-PAD_INDEX = 1
-pre_vocab = [UNK, PAD]
+START = 'START'
+START_INDEX = 1
+END = 'END'
+END_INDEX = 2
+pre_vocab = [UNK, START, END]
 
 pyltp_init = False
 name_tag = 'nh'
 place_tag = 'ns'
 name_replace_ch = 'N'
 place_replace_ch = 'P'
-SEG_MODEL_PATH = './ltp_data_v3.4.0/cws.model'
-TAG_MODEL_PATH = './ltp_data_v3.4.0/pos.model'
-segmentor = None
 postagger = None
+TAG_MODEL_PATH = '/media/gyh/Files/语料库/ltp_data_v3.4.0/pos.model'
 
 
 def _is_chinese(c):
@@ -183,12 +183,10 @@ def cut_char_tokenizer(sentence):
 
 def filter_name_place_tokenizer(sentence):
 
-    global pyltp_init, segmentor, postagger
+    global pyltp_init, postagger
 
     if not pyltp_init:
-        from pyltp import Segmentor, Postagger
-        segmentor = Segmentor()
-        segmentor.load(SEG_MODEL_PATH)
+        from pyltp import Postagger
         postagger = Postagger()
         postagger.load(TAG_MODEL_PATH)
         pyltp_init = True
@@ -206,6 +204,13 @@ def filter_name_place_tokenizer(sentence):
 
     return words
 
+def filter_name_place_char_tokenizer(sentence):
+
+    words = filter_name_place_tokenizer(sentence)
+    chars = ''.join(words)
+    chars = [ch for ch in chars]
+
+    return chars
 
 def create_vocabulary(corpus_data, max_vocabulary_size, tokenizer=cut_word_tokenizer):
     """ create vocabulary from data file(contain one sentence per line)
