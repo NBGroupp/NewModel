@@ -36,7 +36,7 @@ class Proofreading_Model(object):
         # pre_context_model
         with tf.variable_scope('Pre') as scope:
             pre_cell = tf.contrib.rnn.BasicLSTMCell(num_units=PRE_CONTEXT_HIDDEN_SIZE, forget_bias=0.0,
-                                                state_is_tuple=True)
+                                                    state_is_tuple=True)
             if is_training:
                 pre_cell = tf.contrib.rnn.DropoutWrapper(pre_cell, output_keep_prob=KEEP_PROB)
             pre_lstm_cell = tf.contrib.rnn.MultiRNNCell([pre_cell] * PRE_CONTEXT_NUM_LAYERS, state_is_tuple=True)
@@ -95,7 +95,7 @@ class Proofreading_Model(object):
 
         # sotfmax层
         softmax_prob = tf.layers.dense(bilinear_output, units=VOCAB_SIZE, activation=tf.nn.softmax,
-                                         kernel_initializer=tf.random_uniform_initializer(-0.01,0.01))  # [batch_size, vocab_size#]
+                                       kernel_initializer=tf.random_uniform_initializer(-0.01,0.01))  # [batch_size, vocab_size#]
 
         # 非候选词概率置0
         tmp_prob = softmax_prob * self.candidate_in_vocab
@@ -115,7 +115,7 @@ class Proofreading_Model(object):
 
         # 求交叉熵
         one_hot_labels = tf.one_hot(self.targets,VOCAB_SIZE)
-        loss = -tf.reduce_sum(one_hot_labels * tf.log(self.logits))
+        loss = -tf.reduce_sum(one_hot_labels * tf.log(self.logits),reduction_indices=[1])
 
         # 记录cost
         with tf.variable_scope('cost'):
@@ -153,7 +153,7 @@ class Proofreading_Model(object):
 
         self.merged_summary_op = tf.summary.merge_all() # 收集节点
         #self.merged_summary_op = tf.summary.merge(tf.get_collection(tf.GraphKeys.SUMMARIES,scope))
-        
+
 # 使用给定的模型model在数据data上运行train_op并返回在全部数据上的cost值
 def run_epoch(session, model, data, train_op, is_training, batch_size, step_size, char_set, file,
               summary_op, summary_writer):
@@ -180,7 +180,6 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
 
     #获取数据
     dataX1, dataX2, dataX3,dataY = data
-    is_candi = is_candidate(dataX3)
     max_cnt = len(dataY)  #  数据长度
     cnt = 0  # 现在取第cnt个输入
     correct_num = 0  #  正确个数
@@ -197,33 +196,32 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         x2, x2_seqlen = Pad_Zero(x2)# 补0
 
         x3 = dataX3[cnt:cnt + batch_size]
+        x4 = is_candidate(x3)
         x3, _ = Pad_Zero(x3)
-
-        x4 = is_candi[cnt:cnt + batch_size]
 
         y = dataY[cnt:cnt + batch_size]  #  取结果
         # print(y)
         #lstm迭代计算
-        cost, pre_state, fol_state, outputs, _, _, ave_cost_op, ave_accuracy_op\
-        = session.run([model.cost, model.pre_final_state, model.fol_final_state,
-                                                        model.logits, train_op, model.learning_rate_decay_op,
-                                                        model.ave_cost_op, model.ave_accuracy_op],
-                                                       feed_dict={model.pre_input: x1, model.fol_input: x2,
-                                                                  model.candidate_words_input: x3,
-                                                                  model.candidate_in_vocab: x4,
-                                                                  model.pre_input_seq_length:x1_seqlen,
-                                                                  model.fol_input_seq_length:x2_seqlen,
-                                                                  model.targets: y,
-                                                                  model.pre_initial_state: pre_state,
-                                                                  model.fol_initial_state: fol_state
-                                                                  })
+        cost, pre_state, fol_state, outputs, _, _, ave_cost_op, ave_accuracy_op \
+            = session.run([model.cost, model.pre_final_state, model.fol_final_state,
+                           model.logits, train_op, model.learning_rate_decay_op,
+                           model.ave_cost_op, model.ave_accuracy_op],
+                          feed_dict={model.pre_input: x1, model.fol_input: x2,
+                                     model.candidate_words_input: x3,
+                                     model.candidate_in_vocab: x4,
+                                     model.pre_input_seq_length:x1_seqlen,
+                                     model.fol_input_seq_length:x2_seqlen,
+                                     model.targets: y,
+                                     model.pre_initial_state: pre_state,
+                                     model.fol_initial_state: fol_state
+                                     })
         if (is_training):
             model.global_step+=1
         cnt += batch_size
         if (cnt >= max_cnt):
-            cnt = 0        
+            cnt = 0
         if not file:
-            continue     
+            continue
         total_costs += cost  #  求得总costs
         classes = np.argmax(outputs, axis=1)
         # 输出softmax概率值
@@ -232,7 +230,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         #     print("logits : ", outputs[i][y[i]])
         target_index = np.array(y).ravel()
         correct_num = correct_num + sum(classes == target_index)
-        
+
         # 写入到文件以及输出到屏幕
         #if is_training and (step+1) % stepinter == 0:
         if ((step+1) % stepinter == 0) and file:
@@ -249,24 +247,24 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
     if file:
         print("After this epoch, cost : %.3f" % (total_costs / (step_size)))
         file.write("After this epoch, cost : %.3f" % (total_costs / (step_size)) + '\n')
-    
+
     #收集并将cost加入记录
     if(is_training):
         # print ('ave_cost = %.5f' % (total_costs / (step_size + 1)))
         summary_str = session.run(summary_op, feed_dict={model.pre_input: x1, model.fol_input: x2,
                                                          model.candidate_words_input: x3,
                                                          model.candidate_in_vocab: x4,
-                                                                  model.pre_input_seq_length:x1_seqlen,
-                                                                  model.fol_input_seq_length:x2_seqlen,
-                                                                  model.targets: y,
-                                                                  model.pre_initial_state: pre_state,
-                                                                  model.fol_initial_state: fol_state
-                                                                  })
+                                                         model.pre_input_seq_length:x1_seqlen,
+                                                         model.fol_input_seq_length:x2_seqlen,
+                                                         model.targets: y,
+                                                         model.pre_initial_state: pre_state,
+                                                         model.fol_initial_state: fol_state
+                                                         })
         summary_writer.add_summary(summary_str, model.global_epoch)
     if not is_training and file:
-       acc = correct_num*1.0 / len(dataY) # 求得准确率=正确分类的个数
-       print("acc: %.5f\n" % acc)
-       file.write("acc: %.5f\n" % acc)
+        acc = correct_num*1.0 / len(dataY) # 求得准确率=正确分类的个数
+        print("acc: %.5f\n" % acc)
+        file.write("acc: %.5f\n" % acc)
 
 def Pad_Zero(x):
     x_seqlen=[]
