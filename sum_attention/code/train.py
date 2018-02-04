@@ -82,8 +82,8 @@ def main():
         merged_summary_op = train_model.merged_summary_op
         summary_writer = tf.summary.FileWriter(COST_PATH, session.graph)
 
-        PRE_NUM_EPOCH = i
-        while i < NUM_EPOCH + PRE_NUM_EPOCH:
+        #PRE_NUM_EPOCH = i
+        while i < NUM_EPOCH
             print("In iteration: %d " % i)
             file.write("In iteration: %d\n" % i)
             
