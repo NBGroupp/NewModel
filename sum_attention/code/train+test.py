@@ -71,8 +71,8 @@ def main():
             train_model.global_epoch=eval_model.global_epoch=i
             eval_model.global_step=i*VALID_STEP_SIZE
             train_model.global_step=i*TRAIN_STEP_SIZE
-            run_epoch(session, train_model, train_data, tf.no_op(), False,
-                      TRAIN_BATCH_SIZE, TRAIN_STEP_SIZE, char_set, False, False, False)
+            #run_epoch(session, train_model, train_data, tf.no_op(), False,
+                      #TRAIN_BATCH_SIZE, TRAIN_STEP_SIZE, char_set, False, False, False)
         else:
             print("new training...")
             tf.global_variables_initializer().run()
@@ -83,12 +83,13 @@ def main():
         merged_summary_op = train_model.merged_summary_op
         summary_writer = tf.summary.FileWriter(COST_PATH, session.graph)
 
-        #print("In training:")
-        #for i in range(NUM_EPOCH):
+        #PRE_NUM_EPOCH = i
         while i < NUM_EPOCH:
-            print("In training:")
             print("In iteration: %d " % i)
             file.write("In iteration: %d\n" % i)
+            
+            print("In training:")
+            file.write("In training:\n")
             run_epoch(session, train_model, train_data, train_model.train_op, True,
                       TRAIN_BATCH_SIZE, TRAIN_STEP_SIZE, char_set, file, merged_summary_op, summary_writer)
             
@@ -98,6 +99,7 @@ def main():
             
             #验证集
             print("In evaluating:")
+            file.write("In evaluating:\n")
             run_epoch(session, eval_model, valid_data, tf.no_op(), False,
                       VALID_BATCH_SIZE, VALID_STEP_SIZE, char_set, file, False, False)
             i += 1
@@ -107,9 +109,10 @@ def main():
         file.close()
         # 测试模型。
         file = open(TEST_RESULT_PATH, 'w')
-        print("In testing with model of epoch %d: " % i)
+        print("In testing with model of epoch %d: " % i-1)
+        file.write("In testing with model of epoch %d: \n" % i-1)
         #run_epoch(session, eval_model, test_data, tf.no_op(), False,
-                 # TEST_BATCH_SIZE, TEST_STEP_SIZE, char_set, False,False,False)
+                  #TEST_BATCH_SIZE, TEST_STEP_SIZE, char_set, False,False,False)
         run_epoch(session, eval_model, test_data, tf.no_op(), False,
                   TEST_BATCH_SIZE, TEST_STEP_SIZE, char_set, file,False,False)
         file.close()    
@@ -117,4 +120,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
