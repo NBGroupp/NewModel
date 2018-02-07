@@ -70,8 +70,8 @@ def main():
             train_model.global_epoch=eval_model.global_epoch=i
             eval_model.global_step=i*VALID_STEP_SIZE
             train_model.global_step=i*TRAIN_STEP_SIZE
-            #run_epoch(session, train_model, train_data, tf.no_op(), False,
-                      #TRAIN_BATCH_SIZE, TRAIN_STEP_SIZE, char_set, False, False, False)
+            run_epoch(session, train_model, train_data, tf.no_op(), False,
+                      TRAIN_BATCH_SIZE, TRAIN_STEP_SIZE, char_set, False, False, False)
         else:
             print("new training...")
             tf.global_variables_initializer().run()
@@ -82,8 +82,8 @@ def main():
         merged_summary_op = train_model.merged_summary_op
         summary_writer = tf.summary.FileWriter(COST_PATH, session.graph)
 
-        #PRE_NUM_EPOCH = i
-        while i < NUM_EPOCH
+        PRE_NUM_EPOCH = i
+        while i < NUM_EPOCH + PRE_NUM_EPOCH:
             print("In iteration: %d " % i)
             file.write("In iteration: %d\n" % i)
             
@@ -107,4 +107,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
