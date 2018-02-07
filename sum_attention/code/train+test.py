@@ -109,8 +109,8 @@ def main():
         file.close()
         # 测试模型。
         file = open(TEST_RESULT_PATH, 'w')
-        print("In testing with model of epoch %d: " % i-1)
-        file.write("In testing with model of epoch %d: \n" % i-1)
+        print("In testing with model of epoch %d: " % (i-1))
+        file.write("In testing with model of epoch %d: \n" % (i-1))
         #run_epoch(session, eval_model, test_data, tf.no_op(), False,
                   #TEST_BATCH_SIZE, TEST_STEP_SIZE, char_set, False,False,False)
         run_epoch(session, eval_model, test_data, tf.no_op(), False,
