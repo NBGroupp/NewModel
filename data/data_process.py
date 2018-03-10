@@ -34,6 +34,7 @@ def create_input_target_data(data_dir, train_corpus_data, tokenizer, near_words_
     data_nears = []
     data_sum = 0
     data_unk_sum = 0
+    unks = {}
 
     for i, sentence in enumerate(train_corpus_data):
 
@@ -43,6 +44,12 @@ def create_input_target_data(data_dir, train_corpus_data, tokenizer, near_words_
         # tokenize
         one = tokenizer(sentence)
 
+        for token in one:
+            if token not in vocab:
+                if token not in unks:
+                    unks[token] = 1
+                else:
+                    unks[token] += 1
         unk_num_in_sentence = sum([1 for token in one if vocab.get(token, -1) == -1])
         unk_in_sentence = 1 if unk_num_in_sentence > 0 else 0
         if unk_num_in_sentence / len(one) > max_unk_percent_in_sentence:
@@ -131,6 +138,9 @@ def create_input_target_data(data_dir, train_corpus_data, tokenizer, near_words_
         rename(join(data_dir, 'target'), join(data_dir, 'target.'+str(data_sum)))
         rename(join(data_dir, 'nears'), join(data_dir, 'nears.'+str(data_sum)))
 
+    with open(join(data_dir, 'unks.pkl'), 'wb') as f:
+        pickle.dump(unks, f)
+
 
     if operate_in_file:
         return data_sum, data_unk_sum
@@ -215,9 +225,14 @@ def generate_data(data_dir):
         #    drop += 1
         #    continue
         for ch in chs:
-            near_words_dict[ch] = chs.copy()
+            if not near_words_dict.get(ch):
+                near_words_dict[ch] = chs.copy()
+            else:
+                near_words_dict[ch] += [c for c in chs if c not in near_words_dict[ch]]
     print('Creating near words dict... done. drop %d/%d groups near words, %d keys'
           % (drop, len(near_words_data), len(near_words_dict.keys())))
+    with open('near_words_dict.pkl', 'wb') as f:
+        pickle.dump(near_words_dict, f)
 
     # process train data
     normalized_train_corpus_name = train_corpus_name +'.normalized.pkl'
@@ -258,7 +273,8 @@ def generate_data(data_dir):
             f.write('\n'.join(target))
 
 
-data_dir = join(os.getcwd(), time.strftime('%y.%m.%d-%H:%M', time.localtime(time.time())))
-if not exists(data_dir):
-    os.mkdir(data_dir)
-generate_data(data_dir)
+if __name__ == '__main__':
+    data_dir = join(os.getcwd(), time.strftime('%y.%m.%d-%H:%M', time.localtime(time.time())))
+    if not exists(data_dir):
+        os.mkdir(data_dir)
+    generate_data(data_dir)

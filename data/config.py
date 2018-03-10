@@ -11,9 +11,9 @@ from data_util import *
 #-------DATA FILE PATH--------#
 
 # 建立字典语料
-VOCAB_DATA_PATH = 'none'
+VOCAB_DATA_PATH = '/media/gyh/Files/语料库/corpuses/wiki'
 # 使用外来字典文件，不受上方字典最大长度限制
-VOCAB_FILE = '/home/gyh/srtp/NewModel/data/vocabs/aihanyu.vocab.5000'
+VOCAB_FILE = ''
 # 建立数据语料
 TRAIN_DATA_PATH = '/media/gyh/Files/语料库/corpuses/aihanyu'
 # 建立形近字表语料
@@ -22,19 +22,19 @@ NEAR_WORDS_DATA_PATH = '/media/gyh/Files/语料库/corpuses/形近字表(1).txt'
 #-----BUILD VOCAB OPTIONS-----#
 
 # 字典最大长度，-1 则不作限制
-VOCAB_SIZE = 5000
+VOCAB_SIZE = 10000
 # 建立字典时处理语料方式，见上面的Tokenizer
-VOCAB_TOKENIZER = cut_char_tokenizer
+VOCAB_TOKENIZER = filter_name_place_char_tokenizer
 
 #---BUILD TRAIN DATA OPTION---#
 
 # 建立数据时处理语料方式，见上面的Tokenizer
-TRAIN_DATA_TOKENIZER = filter_name_place_char_tokenizer
+TRAIN_DATA_TOKENIZER = filter_name_place_char_tokenizer 
 # 定长K大小，若为-1则不定长
 K = -1
 # 容许建立数据的语料中一个句子里面的UNK TOKEN比例
-MAX_UNK_PERCENT_IN_SENTENCE = 0
+MAX_UNK_PERCENT_IN_SENTENCE = 0.1
 # 带UNK数据在总数据中的比例
-UNK_PERCENT_IN_TOTAL_DATA = 0
+UNK_PERCENT_IN_TOTAL_DATA = 1
 # 是否将运行数据写入文件
 OPERATE_IN_FILE = True
