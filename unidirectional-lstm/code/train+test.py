@@ -32,7 +32,7 @@ def main():
     valid_data=(data1[TRAIN_DATA_SIZE:TRAIN_DATA_SIZE+VALID_DATA_SIZE],target[TRAIN_DATA_SIZE:TRAIN_DATA_SIZE+VALID_DATA_SIZE])
     test_data=(data1[TRAIN_DATA_SIZE+VALID_DATA_SIZE:DATA_SIZE],target[TRAIN_DATA_SIZE+VALID_DATA_SIZE:DATA_SIZE])
 
-    initializer = tf.random_uniform_initializer(-0.05, 0.05)
+    initializer = tf.random_uniform_initializer(-0.01, 0.01)
     with tf.variable_scope("Proofreading_model", reuse=None, initializer=initializer):
         train_model = Proofreading_Model(True, TRAIN_BATCH_SIZE)
 
@@ -70,8 +70,8 @@ def main():
         #for i in range(NUM_EPOCH):
         while i < NUM_EPOCH:
             print("In training:")
-            print("In iteration: %d " % i)
-            file.write("In iteration: %d\n" % i)
+            print("In iteration: %d " % i-1)
+            file.write("In iteration: %d\n" % i-1)
             run_epoch(session, train_model, train_data, train_model.train_op, True,
                       TRAIN_BATCH_SIZE, TRAIN_STEP_SIZE, char_set, file, merged_summary_op, summary_writer)
             
