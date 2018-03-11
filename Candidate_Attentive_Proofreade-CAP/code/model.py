@@ -200,9 +200,9 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         correct_num = correct_num + sum(classes == target_index)
         
         # 写入到文件以及输出到屏幕
-        if (((step+1) % stepinter == 0) or ( step == 0 )) and file:
+        if (((step+1) % STEP_PRINT == 0) or ( step == 0 )) and file:
             end = time.clock()
-            print("%.1f setp/s" % (stepinter/(end-start)))
+            print("%.1f setp/s" % (STEP_PRINT/(end-start)))
             start = time.clock()
             print("After %d steps, cost : %.3f" % (step, total_costs / (step + 1)))
             file.write("After %d steps, cost : %.3f" % (step, total_costs / (step + 1)) + '\n')
