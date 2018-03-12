@@ -4,6 +4,7 @@
 
 import time
 import random
+import sys
 from os import rename
 from os.path import splitext
 from os.path import basename
@@ -20,9 +21,19 @@ def mix_error(tokens, near_words_dict, l_error_ratio, u_error_ratio):
 
     nears = [token for token in tokens if near_words_dict.get(token, -1) != -1]
     if len(nears) == 0:
-        return None
+        return {
+            'tokens': tokens,
+            'mixxed_chars': [],
+            'mixxed_positions': [],
+            'targets': []
+        }
     if l_error_ratio >= (len(nears) / len(tokens)):
-        return None
+        return {
+            'tokens': tokens,
+            'mixxed_chars': [],
+            'mixxed_positions': [],
+            'targets': []
+        }
 
     near_num = int(len(tokens) * u_error_ratio + 0.5)
 
@@ -77,13 +88,10 @@ def create_input_target_data(data_dir, train_corpus_data, tokenizer,
         # tokenize
         _tokens = tokenizer(sentence)
         mixed = mix_error(_tokens, near_words_dict, l_error_ratio, u_error_ratio)
-        if not mixed:
-            continue
-        else:
-            one = mixed['tokens']
-            mixxed_chars = mixed['mixxed_chars']
-            mixxed_positions = mixed['mixxed_positions']
-            targets_chars = mixed['targets']
+        one = mixed['tokens']
+        mixxed_chars = mixed['mixxed_chars']
+        mixxed_positions = mixed['mixxed_positions']
+        targets_chars = mixed['targets']
 
         for token in one:
             if token not in vocab:
@@ -224,13 +232,15 @@ def generate_data(data_dir):
         f.write('unk percent in total data({}): {}\n'.format(
             'if 1, means that all unks mixed into data, not whole data contain unk',
             str(UNK_PERCENT_IN_TOTAL_DATA)))
+        f.write('low error ratio: {}\n'.format(LOW_ERROR_RATIO))
+        f.write('high error ratio: {}\n'.format(UP_ERROR_RATIO))
     print('data will be saved in {}'.format(data_dir))
 
     # preprocess vocab data
     if VOCAB_FILE:
         print('Loading vocab file from {}...'.format(VOCAB_FILE))
         with open(VOCAB_FILE, 'r') as f:
-            vocab = f.read().split('\n')
+            vocab = f.read().strip().split('\n')
     else:
         normalized_vocab_corpus_name = vocab_corpus_name +'.normalized.pkl'
         normalized_vocab_corpus_name = join(vocab_corpus_path, normalized_vocab_corpus_name)
@@ -331,7 +341,15 @@ def generate_data(data_dir):
 
 
 if __name__ == '__main__':
-    data_dir = join(os.getcwd(), time.strftime('%y.%m.%d-%H:%M', time.localtime(time.time())))
+    if len(sys.argv) == 4:
+        # error ratio, dir name input
+        # overwrite config file
+        LOW_ERROR_RATIO = float(sys.argv[1])
+        UP_ERROR_RATIO = float(sys.argv[2])
+        data_dir_name = sys.argv[3]
+    else:
+        data_dir_name = time.strftime('%y.%m.%d-%H:%M', time.localtime(time.time()))
+    data_dir = join(os.getcwd(), data_dir_name)
     if not exists(data_dir):
         os.mkdir(data_dir)
     generate_data(data_dir)
