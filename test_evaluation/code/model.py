@@ -147,7 +147,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
     global TP , FP , TN , FN , P , N
 
     #获取数据
-    dataX1, dataX2, dataX3,dataY = data
+    dataX0, dataX1, dataX2, dataX3, dataY = data
     max_cnt = len(dataY)  #  数据长度
     if is_training:
         cnt = random.randint(0,max_cnt-batch_size+1)  # 现在取第cnt个输入
@@ -159,6 +159,8 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
     for step in range(step_size):
         if (cnt + batch_size > max_cnt):  #  如果此时取的数据超过了结尾，就取结尾的batch_size个数据
             cnt = max_cnt - batch_size
+        x0 = dataX0[cnt:cnt + batch_size]     
+            
         x1 = dataX1[cnt:cnt + batch_size]  #  取前文
         x1,x1_seqlen = Pad_Zero(x1)# 补0
 
@@ -196,7 +198,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         target_index = np.array(y).ravel()
 
         # 统计评价参数
-        statistics_evaluation(classes, target_index)
+        statistics_evaluation(classes, target_index, x0)
 
         # 写入到文件以及输出到屏幕
         if (((step+1) % STEP_PRINT == 0) or ( step == 0 )) and file:
@@ -251,9 +253,9 @@ def is_candidate(x):
     return is_candi
 
 
-def statistics_evaluation(classes,target_index):
+def statistics_evaluation(classes,target_index,x0):
     for i, output_word in enumerate(classes):
-        original_word = x3[i][0]
+        original_word = x0[i]
         target_word = target_index[i]
         if (output_word != original_word):  # 修改的文本
             P = P + 1
