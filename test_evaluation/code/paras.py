@@ -14,17 +14,18 @@ FOL_CONTEXT_NUM_LAYERS= 1 #下文lstm的深度
 
 VALID_BATCH_SIZE = TEST_BATCH_SIZE = 1 #测试数据batch的大小
 
-DATA_SIZE = 7132608
+DATA_SIZE = 4624286
 TEST_DATA_SIZE = DATA_SIZE
 
 TEST_STEP_SIZE=math.ceil(TEST_DATA_SIZE / TEST_BATCH_SIZE)
 
-#文件路径
-DATA0_PATH = '../model_data/data0.7132608'
-DATA1_PATH = '../model_data/data1.7132608'
-DATA2_PATH = '../model_data/data2.7132608'
-DATA3_PATH = '../model_data/data3.7132608'
-TARGET_PATH = '../model_data/target.7132608'
+#文件路径 
+
+DATA0_PATH = '../model_data/data0.'+str(DATA_SIZE)
+DATA1_PATH = '../model_data/data1.'+str(DATA_SIZE)
+DATA2_PATH = '../model_data/data2.'+str(DATA_SIZE)
+DATA3_PATH = '../model_data/candidate.'+str(DATA_SIZE)
+TARGET_PATH = '../model_data/target.'+str(DATA_SIZE)
 VOCAB_PATH = '../model_data/vocab.10000'
 
 CKPT_PATH = '../ckpt/'
