@@ -229,7 +229,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
                                                                   })
         summary_writer.add_summary(summary_str, model.global_epoch)
     if not is_training and file:
-        print_evaluation()
+        print_evaluation(file)
 
 def Pad_Zero(x):
     x_seqlen=[]
@@ -271,14 +271,14 @@ def statistics_evaluation(classes,target_index,x0):
             else:
                 FN = FN + 1
 
-def print_evaluation():
+def print_evaluation(file):
     global TP, FP, TN, FN, P, N
     print("P : %d\t N : %d" % (P,N))
-    file.write("P : %df\t N : %df\n" % (P,N))
-    print("TP : %df\t FP : %d" % (TP, FP))
-    file.write("TP : %df\t FP : %d\n" % (TP, FP))
-    print("TN : %df\t FN : %d" % (TN, FN))
-    file.write("TN : %df\t FN : %d\n" % (TN, FN))
+    file.write("P : %d\t N : %d\n" % (P,N))
+    print("TP : %d\t FP : %d" % (TP, FP))
+    file.write("TP : %d\t FP : %d\n" % (TP, FP))
+    print("TN : %d\t FN : %d" % (TN, FN))
+    file.write("TN : %d\t FN : %d\n" % (TN, FN))
 
     Accuracy = (TP+TN)/(P+N)
     Error_Rate = 1-Accuracy
