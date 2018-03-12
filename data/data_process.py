@@ -102,7 +102,13 @@ def create_input_target_data(data_dir, train_corpus_data, tokenizer,
            and unk_num_in_sentence and data_unk_sum / data_sum > unk_percent:
             continue
 
-        for ch, t, position in zip(mixxed_chars, targets_chars, mixxed_positions):
+        for position, ch in enumerate(one):
+            if ch not in near_words_dict:
+                continue
+            if position in mixxed_positions:
+                t = targets_chars[mixxed_positions.index(position)]
+            else:
+                t = ch
             pres = []
             lats = []
             ch_near_words = [_ for _ in near_words_dict[ch]]
