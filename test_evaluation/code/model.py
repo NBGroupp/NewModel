@@ -254,12 +254,13 @@ def is_candidate(x):
 
 
 def statistics_evaluation(classes,target_index,x0):
+    global TP, FP, TN, FN, P, N
     for i, output_word in enumerate(classes):
         original_word = x0[i]
         target_word = target_index[i]
         if (output_word != original_word):  # 修改的文本
             P = P + 1
-            if ((original_word != target_word) and (output_word == target_word))
+            if ((original_word != target_word) and (output_word == target_word)):
                 TP = TP + 1
             elif (output_word != target_word):
                 FP = FP + 1
