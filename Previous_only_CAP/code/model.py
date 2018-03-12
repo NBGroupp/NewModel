@@ -186,7 +186,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         # print(y)
         #lstm迭代计算
 
-        cost, pre_state, fol_state, outputs, _, _, ave_cost_op, ave_accuracy_op\
+        cost, pre_state, outputs, _, _, ave_cost_op, ave_accuracy_op\
         = session.run([model.cost, model.pre_final_state,
                                                         model.logits, train_op, model.learning_rate_decay_op,
                                                         model.ave_cost_op, model.ave_accuracy_op],
