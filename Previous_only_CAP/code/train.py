@@ -16,12 +16,12 @@ def main():
         for one in data1:
             for index, ele in enumerate(one):
                 one[index]=int(ele)
-    with open(DATA2_PATH, 'r', encoding='utf-8') as f:
-        rows = f.read().strip().split('\n')
-        data2 = [one.split() for one in rows]
-        for one in data2:
-            for index, ele in enumerate(one):
-                one[index]=int(ele)
+    # with open(DATA2_PATH, 'r', encoding='utf-8') as f:
+    #     rows = f.read().strip().split('\n')
+    #     data2 = [one.split() for one in rows]
+    #     for one in data2:
+    #         for index, ele in enumerate(one):
+    #             one[index]=int(ele)
     with open(DATA3_PATH, 'r', encoding='utf-8') as f:
         rows = f.read().strip().split('\n')
         data3 = [one.split() for one in rows]
@@ -40,9 +40,8 @@ def main():
     
     # print(target)
 
-    train_data=(data1[0:TRAIN_DATA_SIZE],data2[0:TRAIN_DATA_SIZE],data3[0:TRAIN_DATA_SIZE],target[0:TRAIN_DATA_SIZE])
+    train_data=(data1[0:TRAIN_DATA_SIZE],data3[0:TRAIN_DATA_SIZE],target[0:TRAIN_DATA_SIZE])
     valid_data=(data1[TRAIN_DATA_SIZE:TRAIN_DATA_SIZE+VALID_DATA_SIZE],
-                data2[TRAIN_DATA_SIZE:TRAIN_DATA_SIZE+VALID_DATA_SIZE],
                 data3[TRAIN_DATA_SIZE:TRAIN_DATA_SIZE + VALID_DATA_SIZE],
                 target[TRAIN_DATA_SIZE:TRAIN_DATA_SIZE+VALID_DATA_SIZE])
 
@@ -107,4 +106,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

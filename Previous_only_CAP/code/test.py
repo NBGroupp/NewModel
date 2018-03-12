@@ -17,12 +17,12 @@ def main():
         for one in data1:
             for index, ele in enumerate(one):
                 one[index]=int(ele)
-    with open(DATA2_PATH, 'r', encoding='utf-8') as f:
-        rows = f.read().strip().split('\n')
-        data2 = [one.split() for one in rows]
-        for one in data2:
-            for index, ele in enumerate(one):
-                one[index]=int(ele)
+    # with open(DATA2_PATH, 'r', encoding='utf-8') as f:
+    #     rows = f.read().strip().split('\n')
+    #     data2 = [one.split() for one in rows]
+    #     for one in data2:
+    #         for index, ele in enumerate(one):
+    #             one[index]=int(ele)
     with open(DATA3_PATH, 'r', encoding='utf-8') as f:
         rows = f.read().strip().split('\n')
         data3 = [one.split() for one in rows]
@@ -40,7 +40,7 @@ def main():
         char_set = f.read().split('\n')
     
 
-    test_data=(data1[TRAIN_DATA_SIZE+VALID_DATA_SIZE:DATA_SIZE],data2[TRAIN_DATA_SIZE+VALID_DATA_SIZE:DATA_SIZE],
+    test_data=(data1[TRAIN_DATA_SIZE+VALID_DATA_SIZE:DATA_SIZE],
                data3[TRAIN_DATA_SIZE + VALID_DATA_SIZE:DATA_SIZE],target[TRAIN_DATA_SIZE+VALID_DATA_SIZE:DATA_SIZE])
     #test_data=(data1[TRAIN_DATA_SIZE:TRAIN_DATA_SIZE+VALID_DATA_SIZE],
                 #data2[TRAIN_DATA_SIZE:TRAIN_DATA_SIZE+VALID_DATA_SIZE],target[TRAIN_DATA_SIZE:TRAIN_DATA_SIZE+VALID_DATA_SIZE])
@@ -69,12 +69,11 @@ def main():
         # 测试模型。
         file = open(TEST_RESULT_PATH, 'w')
         print("In testing with model of epoch %d: " % (i-1))
-        run_epoch(session, test_model, test_data, tf.no_op(), False,
-                  TEST_BATCH_SIZE, TEST_BATCH_SIZE, char_set, False, False, False) 
+        #run_epoch(session, test_model, test_data, tf.no_op(), False,
+                 # TEST_BATCH_SIZE, TEST_BATCH_SIZE, char_set, False, False, False) 
         run_epoch(session, test_model, test_data, tf.no_op(), False,
                   TEST_BATCH_SIZE, TEST_STEP_SIZE, char_set, file,False,False)
         file.close()
 
 if __name__ == "__main__":
     main()
-
