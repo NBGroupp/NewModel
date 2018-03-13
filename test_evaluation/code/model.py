@@ -292,6 +292,7 @@ def print_evaluation(file):
     Precision = TP/(TP+FP)
     F1_Score = 2*Precision*Recall/(Precision+Recall)
     Correction_Rate = TPR / TP
+    Specificity = TN / N
     print("Accuracy : %.5f " % Accuracy)
     file.write("Accuracy : %.5f \n" % Accuracy)
     print("Error_Rate : %.5f " % Error_Rate)
@@ -304,3 +305,5 @@ def print_evaluation(file):
     file.write("F1_Score : %.5f \n" % F1_Score)
     print("Correction_Rate : %.5f " % Correction_Rate)
     file.write("Correction_Rate : %.5f \n" % Correction_Rate)
+    print("Specificity : %.5f " % Specificity)
+    file.write("Specificity : %.5f \n" % Specificity)
