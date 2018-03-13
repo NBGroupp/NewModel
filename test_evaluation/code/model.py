@@ -276,7 +276,7 @@ def statistics_evaluation(classes,target_index,x0):
 def print_evaluation(file):
     global TP, FP, TN, FN, P, N, TPW, TPR
     P = TP + FN
-    F = TN + FP
+    N = TN + FP
     print("P : %d\t N : %d" % (P,N))
     file.write("P : %d\t N : %d\n" % (P,N))
     print("TP : %d\t FP : %d" % (TP, FP))
