@@ -259,13 +259,11 @@ def statistics_evaluation(classes,target_index,x0):
         original_word = x0[i]
         target_word = target_index[i]
         if (output_word != original_word):  # 修改的文本
-            P = P + 1
-            if ((original_word != target_word) and (output_word == target_word)):
+            if ((original_word != target_word) and (output_word == target_word)): #修改正确的文本
                 TP = TP + 1
-            elif (output_word != target_word):
+            elif (output_word != target_word): #修改错误的文本
                 FP = FP + 1
         else:  # 不修改的文本
-            N = N + 1
             if (original_word == target_word):
                 TN = TN + 1
             else:
@@ -273,6 +271,7 @@ def statistics_evaluation(classes,target_index,x0):
 
 def print_evaluation(file):
     global TP, FP, TN, FN, P, N
+    P = TP + FN, F = TN + FP
     print("P : %d\t N : %d" % (P,N))
     file.write("P : %d\t N : %d\n" % (P,N))
     print("TP : %d\t FP : %d" % (TP, FP))
