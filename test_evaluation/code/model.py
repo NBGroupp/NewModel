@@ -254,14 +254,18 @@ def is_candidate(x):
 
 
 def statistics_evaluation(classes,target_index,x0):
-    global TP, FP, TN, FN, P, N
+    global TP, FP, TN, FN, P, N, TPW, TPR
     for i, output_word in enumerate(classes):
         original_word = x0[i]
         target_word = target_index[i]
         if (output_word != original_word):  # 修改的文本
-            if ((original_word != target_word) and (output_word == target_word)): #修改正确的文本
+            if (original_word != target_word):#错改对或错改错
                 TP = TP + 1
-            elif (output_word != target_word): #修改错误的文本
+                if (output_word == target_word): #错改对
+                    TPR = TPR +1
+                if (output_word != target_word): #错改错
+                    TPW = TPW +1
+            elif (original_word == target_word) and (output_word != target_word): #对改错
                 FP = FP + 1
         else:  # 不修改的文本
             if (original_word == target_word):
@@ -279,12 +283,15 @@ def print_evaluation(file):
     file.write("TP : %d\t FP : %d\n" % (TP, FP))
     print("TN : %d\t FN : %d" % (TN, FN))
     file.write("TN : %d\t FN : %d\n" % (TN, FN))
+    print("TPR : %d\t TPW : %d" % (TPR, TPW))
+    file.write("TPR : %d\t TPW : %d" % (TPR, TPW))
 
     Accuracy = (TP+TN)/(P+N)
     Error_Rate = 1-Accuracy
     Recall = TP/P
     Precision = TP/(TP+FP)
     F1_Score = 2*Precision*Recall/(Precision+Recall)
+    Correction_Rate = TPR / TP
     print("Accuracy : %.5f " % Accuracy)
     file.write("Accuracy : %.5f \n" % Accuracy)
     print("Error_Rate : %.5f " % Error_Rate)
@@ -295,3 +302,5 @@ def print_evaluation(file):
     file.write("Precision : %.5f \n" % Precision)
     print("F1_Score : %.5f " % F1_Score)
     file.write("F1_Score : %.5f \n" % F1_Score)
+    print("Correction_Rate : %.5f " % Correction_Rate)
+    file.write("Correction_Rate : %.5f \n" % Correction_Rate)
