@@ -15,7 +15,7 @@ for error_ratio in error_ratios:
     print('Creating dataset {} ~ {} ...'.format(low, high))
     print('=====================================\n')
     subprocess.call(['python3 data_process.py {} {} {}'.format(low, high, dir_name)], shell=True)
-    archive_name = 'baidu-{}~{}.7z'.format(low, high)
+    archive_name = 'data-{}~{}.7z'.format(low, high)
     subprocess.call(['7z a {} {}'.format(archive_name, dir_name)], shell=True)
     subprocess.call(['rm -r {}'.format(dir_name)], shell=True)
 

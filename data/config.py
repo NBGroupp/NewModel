@@ -1,5 +1,8 @@
 from data_util import *
 
+
+# 语料文件格式为一行一条句子
+
 # Tokenizer:
 # cut_word_tokenizer: 结巴分词全模式
 # cut_word_when_tokenize: 结巴分词普通模式
@@ -11,13 +14,14 @@ from data_util import *
 #-------DATA FILE PATH--------#
 
 # 建立字典语料
-VOCAB_DATA_PATH = '/media/gyh/Files/语料库/corpuses/wiki'
-# 使用外来字典文件，不受上方字典最大长度限制
-VOCAB_FILE = '/home/gyh/srtp/NewModel/data//vocab.100000'
+VOCAB_DATA_PATH = './vocab_data_path'
+# 使用外来字典文件，不受上方字典最大长度限制，且建立字典语料一项无效，默认不使用
+# 字典文件格式为一行一个字
+VOCAB_FILE = ''
 # 建立数据语料
-TRAIN_DATA_PATH = '/media/gyh/Files/语料库/corpuses/all.txt'
+TRAIN_DATA_PATH = './train_data_path'
 # 建立形近字表语料
-NEAR_WORDS_DATA_PATH = '/media/gyh/Files/语料库/corpuses/形近字表(1).txt'
+NEAR_WORDS_DATA_PATH = './near_words_path'
 
 #-----BUILD VOCAB OPTIONS-----#
 
@@ -36,11 +40,11 @@ K = -1
 MAX_UNK_PERCENT_IN_SENTENCE = 0.1
 # 带UNK数据在总数据中的比例
 UNK_PERCENT_IN_TOTAL_DATA = 1
-# 是否将运行数据写入文件
+# 是否将运行数据写入文件，若语料文件较大时能仍旧是的脚本在低内存占用下运行
 OPERATE_IN_FILE = True
 
-# 混错比例
+# 混错比例，不需要混错时只需将两个都设置为 0
 LOW_ERROR_RATIO = 0
 UP_ERROR_RATIO = 0.1
-# 是否向量化
+# 生成数据是否向量化，可以设置为 False 来检查脚本生成数据准确性
 VECTORIZE = True
