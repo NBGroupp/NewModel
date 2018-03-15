@@ -74,7 +74,7 @@ class Proofreading_Model(object):
         # 双线性attention
         with tf.variable_scope('bilinear'):  # Bilinear Layer (Attention Step)
             candidate_words_input_vector = tf.nn.embedding_lookup(embedding, self.candidate_words_input)
-            bilinear_weight = tf.get_variable("bilinear_weight", [2 * HIDDEN_SIZE, HIDDEN_SIZE])  # embedding矩阵
+            bilinear_weight = tf.get_variable("bilinear_weight", [2 * HIDDEN_SIZE, HIDDEN_SIZE])
             '''计算候选词与上下文的匹配度'''
             M = candidate_words_input_vector * tf.expand_dims(tf.matmul(concat_output, bilinear_weight), axis=1)  # M = [batch_size,candi_num,hidden_size]
             # attention概率(匹配度)
