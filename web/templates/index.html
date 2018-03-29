@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html; charset=UTF-8" http-equiv="content-type">
+<meta name=keywords content="在线校对"><meta name=description content="NBGroup基于CAP模型的在线校对系统">
+<meta name=robots content=noodp>
+<title>文本校对</title>
+
+<script language="JavaScript">
+function loadXmlDoc(){
+    var xmlhttp = createXmlHttpRequest();
+    xmlhttp.onreadystatechange=function()
+    {
+        if (xmlhttp.readyState==4 && xmlhttp.status==200)
+        {
+            //ajax的回调处理
+            var output_sentence = document.getElementById("correct_result");
+            var result = JSON.parse(xmlhttp.responseText);
+            output_sentence.value = result.sentence;
+        }
+    }
+
+    var input_sentence = document.getElementById("source");
+    xmlhttp.open("GET","/correct?sentence="+input_sentence.value,true);
+    xmlhttp.send();	//调用send()方法才真正发送请求
+}
+//ajax对象的工厂函数
+function createXmlHttpRequest(){
+  var xmlhttp;
+  if (window.XMLHttpRequest)
+  {// code for IE7+, Firefox, Chrome, Opera, Safari
+    xmlhttp=new XMLHttpRequest();
+  }
+  else if(window.ActiveXObject)
+  {// code for IE6, IE5
+    xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+  }
+  return xmlhttp;
+}
+</script>
+
+
+<div>
+    <div class="input-wrap">
+        <p class="input-text-tip">输入文本：</p>
+        <div class="textarea-wrap">
+            <div class="textarea-bg">
+                <span class="prompt-text"></span>
+            </div>
+            <div class="textarea-bg-text" id="textarea-bg-text"></div>
+            <form>
+            <textarea  rows="10" cols="50" id=source name=text wrap=SOFT tabindex=0 dir="ltr" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+            </form action="/server_url" method="post" onsubmit="return beforeSubmit()">
+            <div>
+                <input class="textarea-submit-btn" type="submit" value="开始校对" onclick='loadXmlDoc()'>
+            </div>
+        </div>
+    </div>
+
+    <div class="output-correct-wrapper">
+                <div class="output-correct-text">
+                    <p class="output-correct-text-tip">建议文本：</p>
+                    <div class="output-correct-text-wrapper">
+                        <textarea rows="10" cols="50" id='correct_result' name=text-is disabled wrap=SOFT dir="ltr" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+                        <a class="output-correct-title" href="default.htm" >校对报错反馈</a>
+                        <div class="output-correct-text-placeholder">您的建议将用于提高校对质量</div>
+                    </div>
+                </div>
+    </div>
+</div>
+
+
+
+</html>
