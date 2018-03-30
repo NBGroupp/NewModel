@@ -49,7 +49,7 @@ class Proofreading_Model(object):
                 inputs = tf.nn.dropout(inputs, KEEP_PROB)
             self.initial_state_fw = fw_cell.zero_state(batch_size, tf.float32)  # 初始化最初的状态。
             self.initial_state_bw = bw_cell.zero_state(batch_size, tf.float32)  # 初始化最初的状态。
-            outputs, states = tf.nn.bidirectional_dynamic_rnn(fw_cell, bw_cell, inputs, 
+            outputs, states = tf.nn.bidirectional_dynamic_rnn(fw_cell, bw_cell, inputs,  sequence_length = self.input_seq_length,
                          initial_state_fw = self.initial_state_fw, initial_state_bw = self.initial_state_bw, dtype=tf.float32)
             
             #output = tf.concat(outputs, axis=-1)
