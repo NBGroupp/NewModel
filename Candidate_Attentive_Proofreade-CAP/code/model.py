@@ -70,7 +70,7 @@ class Proofreading_Model(object):
             self.fol_final_state = fol_states  #下文lstm的最终状态
  
         # 简单拼接
-        concat_output = tf.concat([pre_outputs[0], fol_outputs[0]],axis=-1)
+        concat_output = tf.concat([pre_outputs[0][0], fol_outputs[0][0]],axis=-1)
         # 双线性attention
         with tf.variable_scope('bilinear'):  # Bilinear Layer (Attention Step)
             candidate_words_input_vector = tf.nn.embedding_lookup(embedding, self.candidate_words_input)
