@@ -51,7 +51,7 @@ class Proofreading_Model(object):
 
 
         # 简单拼接
-        concat_output = pre_outputs[0]
+        concat_output = pre_outputs[0][0]
         #print(concat_output)
         #self.concat_output = concat_output
         # 双线性attention
