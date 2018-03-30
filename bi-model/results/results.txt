@@ -1,0 +1,5 @@
+In iteration: 0
+In training:
+After 0 steps, cost : 1.589
+outputs: 兰 嘹
+targets: 烂 了
