@@ -130,10 +130,6 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
     #总costs
     total_costs = 0.0
 
-    #初始化数据
-    initial_state_fw = session.run(model.initial_state_fw)
-    initial_state_bw = session.run(model.initial_state_bw)
-
     #获取数据
     dataX1, dataX2, dataX3,dataY = data
     max_cnt = len(dataY)  #  数据长度
@@ -162,17 +158,14 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
 
         y = dataY[cnt:cnt + batch_size]  #  取结果
         
-        cost, state, outputs, _, _, ave_cost_op, ave_accuracy_op\
-        = session.run([model.cost, model.final_state,
-                              model.logits, train_op, model.learning_rate_decay_op,
+        cost,outputs, _, _, ave_cost_op, ave_accuracy_op\
+        = session.run([model.cost, model.logits, train_op, model.learning_rate_decay_op,
                               model.ave_cost_op, model.ave_accuracy_op],
                               feed_dict={model.inputs: x1,
                               model.candidate_words_input: x3,
                               model.candidate_in_vocab: x4,
                               model.input_seq_length:x1_seqlen,
-                              model.targets: y,
-                              model.initial_state_fw: initial_state_fw,
-                              model.initial_state_bw: initial_state_bw,
+                              model.targets: y
                               })
         if (is_training):
             model.global_step+=1
@@ -209,9 +202,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
                                                          model.candidate_in_vocab: x4,
                                                                   model.pre_input_seq_length:x1_seqlen,
                                                                   model.fol_input_seq_length:x2_seqlen,
-                                                                  model.targets: y,
-                                                                  model.pre_initial_state: pre_state,
-                                                                  model.fol_initial_state: fol_state
+                                                                  model.targets: y
                                                                   })
         summary_writer.add_summary(summary_str, model.global_epoch)
     if not is_training and file:
