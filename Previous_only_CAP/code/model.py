@@ -156,10 +156,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
     """
     #总costs
     total_costs = 0.0
-
-    #初始化数据
-    pre_state = session.run(model.pre_initial_state)
-
+    
     #获取数据
     dataX1, dataX3,dataY = data
     max_cnt = len(dataY)  #  数据长度
