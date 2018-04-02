@@ -186,16 +186,14 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         # print(y)
         #lstm迭代计算
 
-        cost, pre_state, outputs, _, _, ave_cost_op, ave_accuracy_op\
-        = session.run([model.cost, model.pre_final_state,
-                                                        model.logits, train_op, model.learning_rate_decay_op,
+        cost, outputs, _, _, ave_cost_op, ave_accuracy_op\
+        = session.run([model.cost, model.logits, train_op, model.learning_rate_decay_op,
                                                         model.ave_cost_op, model.ave_accuracy_op],
                                                        feed_dict={model.pre_input: x1,
                                                                   model.candidate_words_input: x3,
                                                                   model.candidate_in_vocab: x4,
                                                                   model.pre_input_seq_length:x1_seqlen,
-                                                                  model.targets: y,
-                                                                  model.pre_initial_state: pre_state
+                                                                  model.targets: y
                                                                   })
         if (is_training):
             model.global_step+=1
@@ -243,8 +241,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
                                                          model.candidate_words_input: x3,
                                                          model.candidate_in_vocab: x4,
                                                                   model.pre_input_seq_length:x1_seqlen,
-                                                                  model.targets: y,
-                                                                  model.pre_initial_state: pre_state
+                                                                  model.targets: y
                                                                   })
         summary_writer.add_summary(summary_str, model.global_epoch)
     if not is_training and file:
