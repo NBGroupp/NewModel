@@ -32,7 +32,7 @@ NUM_EPOCH = 10 # 迭代次数
 #文件路径
 DATA1_PATH = '../model_data/data1.7132608'
 DATA2_PATH = '../model_data/data2.7132608'
-DATA3_PATH = '../model_data/data3.7132608'
+DATA3_PATH = '../model_data/candidate.7132608'
 TARGET_PATH = '../model_data/target.7132608'
 VOCAB_PATH = '../model_data/vocab.10000'
 
