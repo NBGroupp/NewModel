@@ -180,8 +180,10 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
                                                                   model.targets: y
                                                                   })
         if (is_training):
-            model.global_step+=1
-        cnt += batch_size
+            model.global_step += 1
+            cnt = random.randint(0, max_cnt - batch_size + 1)
+        else:
+            cnt += batch_size
         if (cnt >= max_cnt):
             cnt = 0        
         if not file:
