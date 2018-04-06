@@ -35,6 +35,7 @@ COST_PATH = '../logs/cost&accuracy_logs'
 TEST_RESULT_PATH = '../results/test_results.txt'
 
 STEP_PRINT = 1000 # 输出步频
+PROOFREAD_BIAS = 0.2 # 校对阈值
 
 TP = FP = TN = FN = P = N = 0
 TPR = TPW =0
