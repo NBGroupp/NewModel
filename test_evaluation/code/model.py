@@ -142,8 +142,6 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
     total_costs = 0.0
 
     #初始化数据
-    pre_state = session.run(model.pre_initial_state)
-    fol_state = session.run(model.fol_initial_state)
     global TP , FP , TN , FN , P , N
 
     #获取数据
@@ -173,18 +171,15 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
 
         y = dataY[cnt:cnt + batch_size]  #  取结果
 
-        cost, pre_state, fol_state, outputs, _, _, ave_cost_op, ave_accuracy_op\
-        = session.run([model.cost, model.pre_final_state, model.fol_final_state,
-                                                        model.logits, train_op, model.learning_rate_decay_op,
+        cost, outputs, _, _, ave_cost_op, ave_accuracy_op\
+        = session.run([model.cost, model.logits, train_op, model.learning_rate_decay_op,
                                                         model.ave_cost_op, model.ave_accuracy_op],
                                                        feed_dict={model.pre_input: x1, model.fol_input: x2,
                                                                   model.candidate_words_input: x3,
                                                                   model.candidate_in_vocab: x4,
                                                                   model.pre_input_seq_length:x1_seqlen,
                                                                   model.fol_input_seq_length:x2_seqlen,
-                                                                  model.targets: y,
-                                                                  model.pre_initial_state: pre_state,
-                                                                  model.fol_initial_state: fol_state
+                                                                  model.targets: y
                                                                   })
         if (is_training):
             model.global_step+=1
@@ -198,7 +193,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         target_index = np.array(y).ravel()
 
         # 统计评价参数
-        statistics_evaluation(classes, target_index, x0)
+        statistics_evaluation(classes, target_index, x0, outputs)
 
         # 写入到文件以及输出到屏幕
         if (((step+1) % STEP_PRINT == 0) or ( step == 0 )) and file:
@@ -223,9 +218,7 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
                                                          model.candidate_in_vocab: x4,
                                                                   model.pre_input_seq_length:x1_seqlen,
                                                                   model.fol_input_seq_length:x2_seqlen,
-                                                                  model.targets: y,
-                                                                  model.pre_initial_state: pre_state,
-                                                                  model.fol_initial_state: fol_state
+                                                                  model.targets: y
                                                                   })
         summary_writer.add_summary(summary_str, model.global_epoch)
     if not is_training and file:
@@ -253,10 +246,12 @@ def is_candidate(x):
     return is_candi
 
 
-def statistics_evaluation(classes,target_index,x0):
+def statistics_evaluation(classes,target_index,x0,outputs_prob):
     global TP, FP, TN, FN, P, N, TPW, TPR
     for i, output_word in enumerate(classes):
         original_word = x0[i]
+        if(outputs_prob[i][output_word] <= Proofread_bias):
+            output_word = original_word
         target_word = target_index[i]
         if (output_word != original_word):  # 修改的文本
             if (original_word != target_word):#错改对或错改错
