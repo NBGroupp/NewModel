@@ -250,7 +250,7 @@ def statistics_evaluation(classes,target_index,x0,outputs_prob):
     global TP, FP, TN, FN, P, N, TPW, TPR
     for i, output_word in enumerate(classes):
         original_word = x0[i]
-        if(outputs_prob[i][output_word] <= Proofread_bias):
+        if(outputs_prob[i][output_word] <= PROOFREAD_BIAS):
             output_word = original_word
         target_word = target_index[i]
         if (output_word != original_word):  # 修改的文本
