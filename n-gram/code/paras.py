@@ -1,12 +1,12 @@
 VOCAB_SIZE = 10000
 
 # 训练数据参数
-# DATA_SIZE = 42
-# TRAIN_DATA_SIZE = int(DATA_SIZE * 0.6)
+DATA_SIZE = 42
+TRAIN_DATA_SIZE = int(DATA_SIZE * 0.6)
 
 # 测试数据参数
-DATA_SIZE = 42
-TEST_DATA_SIZE = 42
+# DATA_SIZE = 42
+# TEST_DATA_SIZE = 42
 
 
 # 文件路径
