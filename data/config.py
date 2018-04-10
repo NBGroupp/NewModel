@@ -43,8 +43,7 @@ UNK_PERCENT_IN_TOTAL_DATA = 1
 # 是否将运行数据写入文件，若语料文件较大时能仍旧是的脚本在低内存占用下运行
 OPERATE_IN_FILE = True
 
-# 混错比例，不需要混错时只需将两个都设置为 0
-LOW_ERROR_RATIO = 0
-UP_ERROR_RATIO = 0.1
+# 混错比例，不需要混错时设置为 0
+ERROR_RATIO = 0.1
 # 生成数据是否向量化，可以设置为 False 来检查脚本生成数据准确性
 VECTORIZE = True

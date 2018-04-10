@@ -17,48 +17,38 @@ from data_util import *
 from config import *
 
 
-def mix_error(tokens, near_words_dict, l_error_ratio, u_error_ratio):
+def mix_error(tokens, near_words_dict, vocab, error_ratio):
 
+    error_info = {
+        'tokens': tokens,
+        'mixxed_chars': [],
+        'mixxed_positions': [],
+        'targets': []
+    }
+    if error_ratio <= 0:
+        return error_info
     nears = [token for token in tokens if near_words_dict.get(token, -1) != -1]
     if len(nears) == 0:
-        return {
-            'tokens': tokens,
-            'mixxed_chars': [],
-            'mixxed_positions': [],
-            'targets': []
-        }
-    if l_error_ratio >= (len(nears) / len(tokens)):
-        return {
-            'tokens': tokens,
-            'mixxed_chars': [],
-            'mixxed_positions': [],
-            'targets': []
-        }
+        return error_info
 
-    near_num = int(len(tokens) * u_error_ratio + 0.5)
-
-    mixxed_chars = []
-    mixxed_positions = []
-    targets = []
-    for near in nears[:near_num]:
+    to_mix_times = sum([
+        1 for i in range(len(tokens)) if random.randint(1, 1/error_ratio) == 1
+    ])
+    for near in nears[:to_mix_times]:
         to_mix = random.sample(near_words_dict[near], 1)[0]
         while near == to_mix:
             to_mix = random.sample(near_words_dict[near], 1)[0]
-        mixxed_chars.append(to_mix)
-        mixxed_positions.append(tokens.index(near))
-        tokens[tokens.index(near)] = to_mix
-        targets.append(near)
+        near_index = error_info['tokens'].index(near)
+        error_info['mixxed_chars'].append(to_mix)
+        error_info['mixxed_positions'].append(near_index)
+        error_info['tokens'][near_index] = to_mix
+        error_info['targets'].append(near)
 
-    return {
-        'tokens': tokens,
-        'mixxed_chars': mixxed_chars,
-        'mixxed_positions': mixxed_positions,
-        'targets': targets
-    }
+    return error_info
 
 
 def create_input_target_data(data_dir, train_corpus_data, tokenizer,
-                             near_words_dict, l_error_ratio, u_error_ratio,
+                             near_words_dict, error_ratio,
                              vocab, k, max_unk_percent_in_sentence, vectorize,
                              unk_percent=1, operate_in_file=False):
 
@@ -79,29 +69,34 @@ def create_input_target_data(data_dir, train_corpus_data, tokenizer,
     data_sum = 0
     data_unk_sum = 0
     unks = {}
+    mixxed_token_num = 0
+    mixxed_sentence_num = 0
+    token_num = 0
+    sentence_num = 0
 
     for i, sentence in enumerate(train_corpus_data):
 
-        print('Creating input and target data... %.2f%%, current: %d data from %d sentences'
-              % ((i+1)/len(train_corpus_data)*100, data_sum, i+1), end='\r')
+        print('Creating input and target data... %.2f%%, '
+              'current: %d data from %d sentences, '
+              'error sentence ratio: %.4f%%, error token ratio: %.4f%%'
+              % (
+                  (i+1) / len(train_corpus_data)*100, data_sum, i+1,
+                  mixxed_sentence_num / (sentence_num+1)*100,
+                  mixxed_token_num / (token_num+1) * 100
+              ),
+              end='\r')
 
         # tokenize
         _tokens = tokenizer(sentence)
-        mixed = mix_error(_tokens, near_words_dict, l_error_ratio, u_error_ratio)
-        one = mixed['tokens']
-        mixxed_chars = mixed['mixxed_chars']
-        mixxed_positions = mixed['mixxed_positions']
-        targets_chars = mixed['targets']
-
-        for token in one:
+        for token in _tokens:
             if token not in vocab:
                 if token not in unks:
                     unks[token] = 1
                 else:
                     unks[token] += 1
-        unk_num_in_sentence = sum([1 for token in one if vocab.get(token, -1) == -1])
+        unk_num_in_sentence = sum([1 for token in _tokens if vocab.get(token, -1) == -1])
         unk_in_sentence = 1 if unk_num_in_sentence > 0 else 0
-        if unk_num_in_sentence / len(one) > max_unk_percent_in_sentence:
+        if unk_num_in_sentence / len(_tokens) > max_unk_percent_in_sentence:
             continue
         #if unk_in_sentence:  # NOTICE: drop all unks
         #    continue
@@ -109,6 +104,21 @@ def create_input_target_data(data_dir, train_corpus_data, tokenizer,
         if data_sum \
            and unk_num_in_sentence and data_unk_sum / data_sum > unk_percent:
             continue
+
+        if mixxed_token_num / (token_num + 1) < error_ratio:
+            mixed = mix_error(_tokens, near_words_dict, vocab, error_ratio*2)
+        else:
+            mixed = mix_error(_tokens, near_words_dict, vocab, error_ratio)
+        one = mixed['tokens']
+        mixxed_chars = mixed['mixxed_chars']
+        mixxed_positions = mixed['mixxed_positions']
+        targets_chars = mixed['targets']
+
+        mixxed_token_num += len(mixxed_positions)
+        token_num += len(one)
+        mixxed_sentence_num += int(len(mixxed_positions) > 0)
+        if sum([1 for ch in one if ch not in near_words_dict]) != len(one):
+            sentence_num += 1
 
         for position, ch in enumerate(one):
             if ch not in near_words_dict:
@@ -131,6 +141,13 @@ def create_input_target_data(data_dir, train_corpus_data, tokenizer,
                 pres = [pre_c for pre_c in tokens[position:position+k]]
                 lats = [lat_c for lat_c in tokens[position+k+1:position+k+1+k]]
 
+            #if len(one) >= 12 and 5 <= len(pres) <= 10 and len(lats) <= 10 \
+            #   and 'N' not in pres:
+            #    print('\n' + ''.join(one))
+            #    print(' '.join(pres[1:]) + '\t', ' '.join(lats[:-1]) + '\t', ' '.join(ch_near_words) + '\t' + t)
+            #    print()
+            #    time.sleep(0.5)
+            #break
             lats.reverse()
 
             target_ch = t
@@ -208,9 +225,9 @@ def create_input_target_data(data_dir, train_corpus_data, tokenizer,
 
 
     if operate_in_file:
-        return data_sum, data_unk_sum
+        return data_sum, data_unk_sum, mixxed_token_num, token_num, mixxed_sentence_num, sentence_num
     else:
-        return data1, data2, target
+        return data1, data2, target, mixxed_token_num, token_num, mixxed_sentence_num, sentence_num
 
 
 def generate_data(data_dir):
@@ -232,8 +249,7 @@ def generate_data(data_dir):
         f.write('unk percent in total data({}): {}\n'.format(
             'if 1, means that all unks mixed into data, not whole data contain unk',
             str(UNK_PERCENT_IN_TOTAL_DATA)))
-        f.write('low error ratio: {}\n'.format(LOW_ERROR_RATIO))
-        f.write('high error ratio: {}\n'.format(UP_ERROR_RATIO))
+        f.write('error ratio: {}\n'.format(ERROR_RATIO))
     print('data will be saved in {}'.format(data_dir))
 
     # preprocess vocab data
@@ -318,14 +334,12 @@ def generate_data(data_dir):
 
     # create input and targrt data
     if OPERATE_IN_FILE:
-        data_sum, data_unk_sum = create_input_target_data(
+        data_sum, data_unk_sum, mixxed_token_num, token_num, mixxed_sentence_num, sentence_num  = create_input_target_data(
             data_dir, train_corpus_data, TRAIN_DATA_TOKENIZER, near_words_dict,
-            LOW_ERROR_RATIO, UP_ERROR_RATIO, vocab, K, MAX_UNK_PERCENT_IN_SENTENCE,
+            ERROR_RATIO, vocab, K, MAX_UNK_PERCENT_IN_SENTENCE,
             VECTORIZE, unk_percent=UNK_PERCENT_IN_TOTAL_DATA, operate_in_file=OPERATE_IN_FILE)
-        print('\nTotal data: {}, unk data: {}, unk percent: {:.2f}%%'.\
-              format(data_sum, data_unk_sum, data_unk_sum / (data_sum+1) * 100))
     else:
-        data1, data2, target = create_input_target_data(
+        data1, data2, target, mixxed_token_num, token_num, mixxed_sentence_num, sentence_num = create_input_target_data(
             data_dir, train_corpus_data, TRAIN_DATA_TOKENIZER, near_words_dict, vocab, K,
             MAX_UNK_PERCENT_IN_SENTENCE, unk_percent=UNK_PERCENT_IN_TOTAL_DATA)
 
@@ -339,14 +353,19 @@ def generate_data(data_dir):
         with open(join(data_dir, 'target.'+str(len(target))), 'w') as f:
             f.write('\n'.join(target))
 
+    with open(join(data_dir, 'log'), 'a') as f:
+        f.write('mixxed token number: ' + str(mixxed_token_num) + '\n')
+        f.write('token number:' + str(token_num) + '\n')
+        f.write('mixxed sentence number:' + str(mixxed_sentence_num) + '\n')
+        f.write('sentence number:' + str(sentence_num) + '\n')
+
 
 if __name__ == '__main__':
-    if len(sys.argv) == 4:
+    if len(sys.argv) == 3:
         # error ratio, dir name input
         # overwrite config file
-        LOW_ERROR_RATIO = float(sys.argv[1])
-        UP_ERROR_RATIO = float(sys.argv[2])
-        data_dir_name = sys.argv[3]
+        ERROR_RATIO = float(sys.argv[1])
+        data_dir_name = sys.argv[2]
     else:
         data_dir_name = time.strftime('%y.%m.%d-%H:%M', time.localtime(time.time()))
     data_dir = join(os.getcwd(), data_dir_name)

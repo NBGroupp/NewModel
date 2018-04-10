@@ -5,17 +5,15 @@ import subprocess
 
 start_time_str = time.strftime('%y.%m.%d-%H:%M:%S', time.localtime(time.time()))
 start_time = time.time()
-error_ratios = ([0, 0.1], [0.1, 0.2], [0.2, 0.3], [0.3, 0.4])
+error_ratios = [0]
 dir_name = 'data'
 
 for error_ratio in error_ratios:
-    low = error_ratio[0]
-    high = error_ratio[1]
     print('\n=====================================')
-    print('Creating dataset {} ~ {} ...'.format(low, high))
+    print('Creating dataset with error ratio: {} ...'.format(error_ratio))
     print('=====================================\n')
-    subprocess.call(['python3 data_process.py {} {} {}'.format(low, high, dir_name)], shell=True)
-    archive_name = 'data-{}~{}.7z'.format(low, high)
+    subprocess.call(['python3 data_process.py {} {}'.format(error_ratio, dir_name)], shell=True)
+    archive_name = 'data-{}.7z'.format(error_ratio)
     subprocess.call(['7z a {} {}'.format(archive_name, dir_name)], shell=True)
     subprocess.call(['rm -r {}'.format(dir_name)], shell=True)
 
