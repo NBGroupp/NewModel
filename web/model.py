@@ -126,7 +126,7 @@ class Proofreading_Model(object):
         
 # 使用给定的模型model在数据data上运行train_op并返回在全部数据上的cost值
 def run_epoch(session, model, data, train_op, is_training, batch_size, step_size, char_set, file,
-              summary_op, summary_writer):
+              summary_op, summary_writer, origin_word):
     """
     :param session: tf.Session() to compute
     :param model: the proof model already defined
@@ -195,6 +195,10 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
             cnt = 0
        
         classes = np.argmax(outputs, axis=1)
+            
+        prob=0.04
+        if model.logits[origin_word] > prob * model.logits[class]:
+            class = origin_word
         
         if not file:
             return classes#continue     
