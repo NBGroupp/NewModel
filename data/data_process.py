@@ -32,7 +32,7 @@ def mix_error(tokens, near_words_dict, vocab, error_ratio):
         return error_info
 
     to_mix_times = sum([
-        1 for i in range(len(tokens)) if random.randint(1, 1/error_ratio) == 1
+        1 for i in range(len(tokens)) if random.randint(1, int(1/error_ratio)) == 1
     ])
     for near in nears[:to_mix_times]:
         to_mix = random.sample(near_words_dict[near], 1)[0]
