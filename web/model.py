@@ -197,8 +197,8 @@ def run_epoch(session, model, data, train_op, is_training, batch_size, step_size
         classes = np.argmax(outputs, axis=1)
             
         prob=0.04
-        if model.logits[origin_word] > prob * model.logits[class]:
-            class = origin_word
+        if outputs[origin_word] > prob * outputs[classes]:
+            classes = origin_word
         
         if not file:
             return classes#continue     
