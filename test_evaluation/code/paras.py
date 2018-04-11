@@ -14,17 +14,17 @@ FOL_CONTEXT_NUM_LAYERS= 1 #下文lstm的深度
 
 VALID_BATCH_SIZE = TEST_BATCH_SIZE = 100 #测试数据batch的大小
 
-DATA_SIZE = 4624286
-TEST_DATA_SIZE = DATA_SIZE
+DATA_SIZE = 24378315
+TEST_DATA_SIZE = 100000
 
 TEST_STEP_SIZE=math.ceil(TEST_DATA_SIZE / TEST_BATCH_SIZE)
 
 #文件路径 
 
-DATA0_PATH = '../model_data/data0.'+str(DATA_SIZE)
+DATA0_PATH = '../model_data/error_origins.'+str(DATA_SIZE)
 DATA1_PATH = '../model_data/data1.'+str(DATA_SIZE)
 DATA2_PATH = '../model_data/data2.'+str(DATA_SIZE)
-DATA3_PATH = '../model_data/candidate.'+str(DATA_SIZE)
+DATA3_PATH = '../model_data/nears.'+str(DATA_SIZE)
 TARGET_PATH = '../model_data/target.'+str(DATA_SIZE)
 VOCAB_PATH = '../model_data/vocab.10000'
 
@@ -35,7 +35,7 @@ COST_PATH = '../logs/cost&accuracy_logs'
 TEST_RESULT_PATH = '../results/test_results.txt'
 
 STEP_PRINT = 1000 # 输出步频
-PROOFREAD_BIAS = 0.2 # 校对阈值
+PROOFREAD_BIAS = 0.04
 
 TP = FP = TN = FN = P = N = 0
 TPR = TPW =0

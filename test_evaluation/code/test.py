@@ -9,32 +9,69 @@ from paras import *
 
 #定义主函数并执行
 def main():
+    row_num = TEST_DATA_SIZE
     with open(DATA0_PATH, 'r', encoding='utf-8') as f:
-        rows = f.read().strip().split('\n')
-        data0 = [] 
+        rows = []
+        cnt = 0
+        for line in f:
+            if (cnt < row_num):
+                rows.append(line)
+            else:
+                break
+            cnt += 1
+        data0 = []
         for one in rows:
             data0.append(int(one))
+
     with open(DATA1_PATH, 'r', encoding='utf-8') as f:
-        rows = f.read().strip().split('\n')
+        rows = []
+        cnt = 0
+        for line in f:
+            if (cnt < row_num):
+                rows.append(line)
+            else:
+                break
+            cnt += 1
         data1 = [one.split() for one in rows]
         for one in data1:
             for index, ele in enumerate(one):
                 one[index]=int(ele)
     with open(DATA2_PATH, 'r', encoding='utf-8') as f:
-        rows = f.read().strip().split('\n')
+        rows = []
+        cnt = 0
+        for line in f:
+            if (cnt < row_num):
+                rows.append(line)
+            else:
+                break
+            cnt += 1
         data2 = [one.split() for one in rows]
         for one in data2:
             for index, ele in enumerate(one):
                 one[index]=int(ele)
     with open(DATA3_PATH, 'r', encoding='utf-8') as f:
-        rows = f.read().strip().split('\n')
+        rows = []
+        cnt = 0
+        for line in f:
+            if (cnt < row_num):
+                rows.append(line)
+            else:
+                break
+            cnt += 1
         data3 = [one.split() for one in rows]
         for one in data3:
             for index, ele in enumerate(one):
                 one[index]=int(ele)
     with open(TARGET_PATH, 'r', encoding='utf-8') as f:
-        rows = f.read().strip().split('\n')
-        target = [] 
+        rows = []
+        cnt = 0
+        for line in f:
+            if (cnt < row_num):
+                rows.append(line)
+            else:
+                break
+            cnt += 1
+        target = []
         for one in rows:
             target.append(int(one))
     with open(VOCAB_PATH, 'r', encoding='utf-8') as f:
