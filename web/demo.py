@@ -25,14 +25,14 @@ def proofread(sentence, model, session, vocab, vocab_d, nwd):
             pres = ['START'] + [pre_c for pre_c in sentence[:pos]]
             lats = [lat_c for lat_c in sentence[pos+1:]] + ['END']
             lats.reverse()
-            pres = [str(vocab_d.get(_, UNK_INDEX)) for _ in pres]
-            lats = [str(vocab_d.get(_, UNK_INDEX)) for _ in lats]
-            candidates = [str(vocab_d.get(_)) for _ in nwd[char]]
-            target_ch = [str(vocab_d.get(char))]
+            pres = [int(vocab_d.get(_, UNK_INDEX)) for _ in pres]
+            lats = [int(vocab_d.get(_, UNK_INDEX)) for _ in lats]
+            candidates = [int(vocab_d.get(_)) for _ in nwd[char]]
+            target_ch = [int(vocab_d.get(char))]
             #input_data = (pres, lats, candidates, target_ch)
             input_data = ([pres], [lats], [candidates], target_ch)
             res = get_one_result(model, session, vocab, input_data)
-            result += vocab[int(res)]
+            result += vocab[res]
         else:
             result += char
     return result
@@ -48,4 +48,4 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001)
+    app.run(host='127.0.0.1', port=5001)
