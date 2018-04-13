@@ -1,0 +1,1 @@
+Attention only use alpha
