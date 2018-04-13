@@ -1,2 +1,1 @@
-单向lstm模型 
-输入为前文所有字
+Unidirectional LSTM
