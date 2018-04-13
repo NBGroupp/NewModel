@@ -1,1 +1,1 @@
-Attention only use alpha
+Test Half-Attention
