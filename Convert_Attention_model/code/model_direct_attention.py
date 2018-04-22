@@ -83,43 +83,34 @@ class Proofreading_Model(object):
 
         # 简单拼接
         all_outputs = tf.concat([pre_outputs, fol_outputs], axis=1)
-        concat_output = tf.concat([pre_states[0][-1], fol_states[0][-1]], axis=-1) #[batch, 2*hidden]
-
         # 1表示有输入，0表示为padding值
         all_input = tf.concat([self.pre_input, self.fol_input], axis=1)
         one_all_input = tf.sign(all_input)# [batch_size,time_step]
         # attention for all text
         with tf.variable_scope('attention'):
-            bilinear_weight = tf.get_variable("bilinear_weight_a", [HIDDEN_SIZE, HIDDEN_SIZE])
+            bilinear_weight = tf.get_variable("bilinear_weight", [HIDDEN_SIZE, HIDDEN_SIZE])
 
-            # 计算LSTM输出与候选词的相关性
-            M_a = tf.expand_dims(all_outputs, axis=1) * tf.expand_dims(
+            # 计算LSTM输出与候选词的匹配度
+            M = tf.expand_dims(all_outputs, axis=1) * tf.expand_dims(
                                                               tf.matmul(candidate_words_input_vector, tf.tile(tf.expand_dims(bilinear_weight, axis=0),
                                                               [tf.shape(candidate_words_input_vector)[0],1,1])), #[batch_size,candidate,hidden_size]
                                                               axis=2)  # M = [batch_size,candidate,time_step,hidden_size]
 
-            score = tf.reduce_sum(M_a, axis=3)  # [batch_size,candidate,time_step]
+            score = tf.reduce_sum(M, axis=3)  # [batch_size,candidate,time_step]
             one_all_input = tf.tile(tf.expand_dims(one_all_input, axis=1), [1,tf.shape(score)[1],1]) # [batch_size,candidate,time_step]
             paddings = tf.ones_like(one_all_input,dtype=tf.float32) * (-2 ** 32 + 1)
             score = tf.where(tf.equal(one_all_input, 0), paddings, score)
 
             # attention概率(匹配度)
-            alpha_a = tf.nn.softmax(score) # [batch_size,candidate,time_step]
+            alpha = tf.nn.softmax(score) # [batch_size,candidate,time_step]
 
             # attention vector
-            attention_output = tf.reduce_sum(tf.expand_dims(all_outputs, axis=1) * tf.expand_dims(alpha_a, axis=3),axis=2)  # [batch, candidate, hidden_size]
-         # 双线性attention
-        with tf.variable_scope('bilinear'):  # Bilinear Layer (Attention Step)
-            bilinear_weight = tf.get_variable("bilinear_weight_b", [2*HIDDEN_SIZE, HIDDEN_SIZE])
+            attention_output = tf.reduce_sum(tf.expand_dims(all_outputs, axis=1) * tf.expand_dims(alpha, axis=3),axis=2)  # [batch, candidate, hidden_size]
 
-            # 计算候选词特征向量与上下文输出的相关性
-            M_b = attention_output * tf.expand_dims(tf.matmul(concat_output, bilinear_weight),
-                                                              axis=1)  # M = [batch_size,candi_num,hidden_size]
-            # attention概率(匹配度)
-            alpha_b = tf.nn.softmax(tf.reduce_sum(M_b, axis=2))  # [batch_size,candi_num]
-
+        feed_output = tf.reduce_sum(feedforward(attention_output, num_units=[1], scope="feed_forward"), reduction_indices=-1)
+        alpha = tf.nn.softmax(feed_output)  # [batch_size,candi_num]
         # 非候选词概率置0
-        tmp_prob = alpha_b * self.is_candidate
+        tmp_prob = alpha * self.is_candidate
 
         # 重算概率
         self.logits = tmp_prob / tf.expand_dims(tf.reduce_sum(tmp_prob, axis=1), axis=1)

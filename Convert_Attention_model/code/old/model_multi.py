@@ -39,7 +39,7 @@ class Proofreading_Model(object):
         # 定义预期输出，它的维度和上面维度相同
         self.targets = tf.placeholder(tf.int32, [batch_size, ])
         embedding = tf.get_variable("embedding", [VOCAB_SIZE, HIDDEN_SIZE])  # embedding矩阵
-        candidate_words_input_vector = tf.nn.embedding_lookup(embedding, self.candidate_words_input) #[batchsize, candidate_len, hidden_size]
+        candidate_words_input_vector = tf.nn.embedding_lookup(embedding, self.candidate_words_input) #(batchsize * candidate_len * hidden_size)
         # pre_context_model
         with tf.variable_scope('Pre') as scope:
             pre_cell = tf.contrib.rnn.BasicLSTMCell(num_units=PRE_CONTEXT_HIDDEN_SIZE, forget_bias=0.0,
@@ -57,7 +57,17 @@ class Proofreading_Model(object):
                                                         initial_state=self.pre_initial_state, dtype=tf.float32)# pre_outputs = [N, timestep, hidden_size]
             # pre_outputs = (bacthsize * length * hiddensize)       
             self.pre_final_state = pre_states  # 上文LSTM的最终状态
-            #pre_outputs = pre_states
+            pre_attention = multihead_attention(queries=candidate_words_input_vector, 
+                                                    keys=pre_outputs,
+                                                    queries_length=self.candidate_len,
+                                                    keys_length=self.pre_input_seq_length,
+                                                    num_units=HIDDEN_SIZE, 
+                                                    num_heads=NUM_HEADS, 
+                                                    dropout_rate=DROP_RATE,
+                                                    is_training=is_training,
+                                                    causality=False,
+                                                    scope="Pre")
+            pre_outputs = pre_states
             #tf.Print(pre_outputs,[pre_outputs],"pre_outputs=", summarize=batch_size)
             
             
@@ -78,55 +88,33 @@ class Proofreading_Model(object):
                                                         initial_state=self.fol_initial_state,
                                                         dtype=tf.float32)# fol_outputs = [N, timestep, hidden_size]
             # fol_outputs = (bacthsize * length * hiddensize)
-            self.fol_final_state = fol_states  # 下文lstm的最终状态   
-            #fol_outputs = fol_states
+            self.fol_final_state = fol_states  # 下文lstm的最终状态
+            fol_attention = multihead_attention(queries=candidate_words_input_vector, 
+                                                    keys=fol_outputs,
+                                                    queries_length=self.candidate_len,
+                                                    keys_length=self.fol_input_seq_length,
+                                                    num_units=HIDDEN_SIZE, 
+                                                    num_heads=NUM_HEADS, 
+                                                    dropout_rate=DROP_RATE,
+                                                    is_training=is_training,
+                                                    causality=False,
+                                                    scope="Fol")
+            fol_outputs = fol_states
 
         # 简单拼接
-        all_outputs = tf.concat([pre_outputs, fol_outputs], axis=1)
-        concat_output = tf.concat([pre_states[0][-1], fol_states[0][-1]], axis=-1) #[batch, 2*hidden]
-
-        # 1表示有输入，0表示为padding值
-        all_input = tf.concat([self.pre_input, self.fol_input], axis=1)
-        one_all_input = tf.sign(all_input)# [batch_size,time_step]
-        # attention for all text
-        with tf.variable_scope('attention'):
-            bilinear_weight = tf.get_variable("bilinear_weight_a", [HIDDEN_SIZE, HIDDEN_SIZE])
-
-            # 计算LSTM输出与候选词的相关性
-            M_a = tf.expand_dims(all_outputs, axis=1) * tf.expand_dims(
-                                                              tf.matmul(candidate_words_input_vector, tf.tile(tf.expand_dims(bilinear_weight, axis=0),
-                                                              [tf.shape(candidate_words_input_vector)[0],1,1])), #[batch_size,candidate,hidden_size]
-                                                              axis=2)  # M = [batch_size,candidate,time_step,hidden_size]
-
-            score = tf.reduce_sum(M_a, axis=3)  # [batch_size,candidate,time_step]
-            one_all_input = tf.tile(tf.expand_dims(one_all_input, axis=1), [1,tf.shape(score)[1],1]) # [batch_size,candidate,time_step]
-            paddings = tf.ones_like(one_all_input,dtype=tf.float32) * (-2 ** 32 + 1)
-            score = tf.where(tf.equal(one_all_input, 0), paddings, score)
-
-            # attention概率(匹配度)
-            alpha_a = tf.nn.softmax(score) # [batch_size,candidate,time_step]
-
-            # attention vector
-            attention_output = tf.reduce_sum(tf.expand_dims(all_outputs, axis=1) * tf.expand_dims(alpha_a, axis=3),axis=2)  # [batch, candidate, hidden_size]
-         # 双线性attention
-        with tf.variable_scope('bilinear'):  # Bilinear Layer (Attention Step)
-            bilinear_weight = tf.get_variable("bilinear_weight_b", [2*HIDDEN_SIZE, HIDDEN_SIZE])
-
-            # 计算候选词特征向量与上下文输出的相关性
-            M_b = attention_output * tf.expand_dims(tf.matmul(concat_output, bilinear_weight),
-                                                              axis=1)  # M = [batch_size,candi_num,hidden_size]
-            # attention概率(匹配度)
-            alpha_b = tf.nn.softmax(tf.reduce_sum(M_b, axis=2))  # [batch_size,candi_num]
-
+        concat_output = tf.concat([pre_attention, fol_attention], axis=-1)
+        
+        feed_output = tf.reduce_sum(feedforward(concat_output, num_units=[1], scope="feed_forward"), reduction_indices=-1)
+        alpha = tf.nn.softmax(feed_output)  # [batch_size,candi_num]
         # 非候选词概率置0
-        tmp_prob = alpha_b * self.is_candidate
+        tmp_prob = alpha * self.is_candidate
 
         # 重算概率
         self.logits = tmp_prob / tf.expand_dims(tf.reduce_sum(tmp_prob, axis=1), axis=1)
         self.logits = tf.clip_by_value(self.logits, 1e-7, 1.0 - 1e-7)
-            
+        
         # 求交叉熵
-        self.y_smoothed = self.one_hot_labels #label_smoothing(self.one_hot_labels)
+        self.y_smoothed = label_smoothing(self.one_hot_labels)
         loss = -tf.reduce_sum(self.y_smoothed * tf.log(self.logits), reduction_indices=1)
         
         # 记录cost
