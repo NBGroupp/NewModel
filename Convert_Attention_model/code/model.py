@@ -117,7 +117,7 @@ class Proofreading_Model(object):
         self.logits = tf.clip_by_value(self.logits, 1e-7, 1.0 - 1e-7)
             
         # 求交叉熵
-        self.y_smoothed = label_smoothing(self.one_hot_labels)
+        self.y_smoothed = self.one_hot_labels #label_smoothing(self.one_hot_labels)
         loss = -tf.reduce_sum(self.y_smoothed * tf.log(self.logits), reduction_indices=1)
         
         # 记录cost
